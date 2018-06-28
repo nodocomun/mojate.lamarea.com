@@ -1,0 +1,43 @@
+.mce-i-ptb-map-favicon:before {
+    content: "\f041";
+    font-size: 21px;
+    font-family: FontAwesome;
+}
+#ptb_map_shortcode_dialog{
+    max-height: 620px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 100000 !important;
+}
+#mce-modal-block, #mce-modal-block.mce-fade {
+    z-index: 10000 !important;
+}
+#ptb_map_shortcode_dialog .ptb_map_select{
+    border: 1px solid #ccc;
+}
+#ptb_map_shortcode_dialog .ptb_map_marker{
+    position: relative;
+}
+#ptb_map_shortcode_dialog .ptb_map_marker input{
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    display: block;
+    margin-bottom: 5px;
+}
+.ptb_map_marker a,.ptb_map_marker button{
+    outline: none;
+    color:#0073aa;
+    cursor: pointer;
+}
+#ptb_marker_preview{
+    width: 28px;
+    height: 28px;
+    position: absolute;
+    left: -28px;
+    top: 2px;
+    background-size: cover !important;
+    background-position: center center !important;
+    font-family: FontAwesome;
+}

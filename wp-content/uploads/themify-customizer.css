@@ -1,0 +1,31 @@
+/* Themify Customize Styling */
+#headerwrap {	background: none;
+	background-color: #60bbf0; 
+}
+#header {	
+	color: #ebfdff; 
+}
+#headerwrap.fixed-header, .transparent-header #headerwrap.fixed-header {	background: none;
+	background-color: #60bbf0; 
+}
+#headerwrap.fixed-header #header {	
+	color: #ffffff; 
+}
+body:not(.mobile_menu_active) #headerwrap.fixed-header #header a, .mobile_menu_active #headerwrap.fixed-header #site-logo a, .mobile_menu_active #headerwrap.fixed-header #menu-icon {	
+	color: #ebfcff; 
+}
+#headerwrap #mobile-menu.sidemenu-on {	background: none;
+	background-color: #1e899e; 
+}
+#headerwrap #mobile-menu.sidemenu-on nav li a {	
+	color: #ffffff; 
+}
+#headerwrap #mobile-menu.sidemenu-on nav a:hover, #headerwrap #mobile-menu.sidemenu-on nav .current-menu-item > a {	
+	color: #b2f5ff; 
+}
+#footerwrap {	background: none;
+	background-color: #abd9f5; 
+}
+.footer-widgets-wrap {	background: none;
+	background-color: #60bbf0; 
+}

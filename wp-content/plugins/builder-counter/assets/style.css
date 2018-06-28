@@ -1,0 +1,52 @@
+.module-counter {
+	text-align: center;
+	margin-bottom: 1.5em;
+}
+.module-counter .easyPieChart {
+	position: relative;
+	margin: 0 auto;
+	max-width: 100%;
+}
+.module-counter .easyPieChart canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	max-width: 100%;
+}
+.module-counter .easyPieChart .module-counter-background {
+	border-radius: 100%;
+	width: 80%;
+	height: 80%;
+	position: absolute;
+	left: 10%;
+	top: 10%;
+}
+.module-counter .number {
+	position: relative;
+	vertical-align: middle;
+	display: inline-block;
+	line-height: inherit !important;
+}
+.module-counter .bc-timer {
+	font-size: 3em;
+	line-height: inherit !important;
+}
+.module-counter [data-size="150"] .bc-timer,
+.module-counter.size-medium .bc-timer {
+	font-size: 2em;
+}
+.module-counter [data-size="100"] .bc-timer,
+.module-counter.size-small .bc-timer {
+	font-size: 1.5em;
+}
+.module-counter .counter-text {
+	display: block;
+}
+
+/* Docked panel Counter Fields */
+.tb_module_panel_docked .themify_builder_field .multi_number_counter,
+.tb_module_panel_docked .multi_number_counter .themify_builder_field,
+.tb_module_panel_docked .multi_circle_counter .themify_builder_field {
+	width: 100%;
+	max-width: none;
+}
