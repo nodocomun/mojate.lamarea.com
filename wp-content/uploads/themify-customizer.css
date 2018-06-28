@@ -11,9 +11,6 @@
 #headerwrap.fixed-header #header {	
 	color: #ffffff; 
 }
-body:not(.mobile_menu_active) #headerwrap.fixed-header #header a, .mobile_menu_active #headerwrap.fixed-header #site-logo a, .mobile_menu_active #headerwrap.fixed-header #menu-icon {	
-	color: #ebfcff; 
-}
 #headerwrap #mobile-menu.sidemenu-on {	background: none;
 	background-color: #1e899e; 
 }
