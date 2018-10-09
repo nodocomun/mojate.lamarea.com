@@ -2,7 +2,7 @@
 /**
  * The dashboard-specific functionality of the plugin.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -407,7 +407,7 @@ class PTB_Admin {
             <h2><?php _e('About Post Type Builder', 'ptb') ?></h2>
             <p><a href="//themify.me/post-type-builder">Post Type Builder</a> (PTB) is an &quot;all-in-one&quot; plugin that allows you to create custom post types, taxonomies, and post type templates.</p>
 
-            <iframe style="max-width: 100%; margin: 40px 0 30px; border: solid 1px #000; display: block; clear: both;" width="760" height="420" src="//www.youtube.com/embed/xWUQ5EEuxnU?rel=0&amp;start=42" frameborder="0" allowfullscreen=""></iframe>
+            <iframe style="max-width: 100%; margin: 40px 0 30px; border: solid 1px #000; display: block; clear: both;" width="760" height="420" src="https://www.youtube.com/embed/vVnxPsTqsrM" frameborder="0" allowfullscreen=""></iframe>
 
             <h3>Import Sample Data</h3>
             <p>If you are new with the plugin, it will help you to understand how it works by viewing some sample post types (like our <a href="//themify.me/demo/themes/post-type-builder/">demo</a>).</p>
@@ -610,7 +610,20 @@ class PTB_Admin {
                     'taxonomy_delete' => __('Unregister the taxonomy', 'ptb'),
                     'template_delete' => __('Do you want to delete this?', 'ptb'),
                     'module_delete' => __('Do you want to delete this module?', 'ptb'),
-                    'lng' => PTB_Utils::get_current_language_code()
+                    'import_samples' => __('Import sample posts too', 'ptb'),
+                    'import' => __('Import', 'ptb'),
+                    'confirm_import'=>__('This operation will override the post type %s, this includes the templates. Should we continue?','ptb'),
+                    'lng' => PTB_Utils::get_current_language_code(),
+                    'import_pre'=>array(
+                        'loading'=>__('Start Loading','ptb'),
+                        'cpt'=>__('Loading Custom Post Type: %s','ptb'),
+                        'start_samples'=>__('Start Loading Samples','ptb'),
+                        'samples'=>__('Loading Samples: %s','ptb'),
+                        'start_images'=>__('Start Loading Images','ptb'),
+                        'images'=>__('Loading Images: %s','ptb'),
+                        'saving'=>__('Saving...','ptb'),
+                        'finish'=>__('Import is completed')
+                    )
                 );
                 wp_localize_script($this->plugin_name, 'ptb_js', $translation_array);
                 wp_enqueue_script($this->plugin_name);
@@ -796,7 +809,7 @@ class PTB_Admin {
             else{
                  $data['data'] = __('Something goes wrong, please try again','ptb');
             }
-            
+         
             echo wp_json_encode($data);
         }
         wp_die();
@@ -935,6 +948,7 @@ class PTB_Admin {
         $ext = $src_info['extension'];
         $upload_dir = $upload_info['basedir'];
         $thumb_name = $src_info['filename'] . '-' ;
+            $rel_name = $src_info['basename'];
         $rel_path = str_replace(array($upload_info['baseurl'],$src_info['basename']), array('',''), $url);
         $rel_path = trailingslashit($upload_dir.'/'.trim($rel_path,'/').'/');
         unset($upload_dir,$upload_info,$src_info);
@@ -942,13 +956,13 @@ class PTB_Admin {
 
             while (false !== ($file = readdir($handle))){
               
-                if($file!=='.' && $file!=='..' && strpos($file,$thumb_name)!==false && is_file($file)){
+                if($file!=='.' && $file!=='..' && $rel_name!==$file && strpos($file,$thumb_name)!==false && is_file($rel_path.$file)){
                     
                     if(pathinfo($file,PATHINFO_EXTENSION)===$ext){
                         $name = str_replace($thumb_name,'',$file);
                         $name = explode('x',$name);
                         if(is_numeric($name[0])){
-                            unlink($file);
+                            wp_delete_file($rel_path.$file);
                         }
                     }
                 }

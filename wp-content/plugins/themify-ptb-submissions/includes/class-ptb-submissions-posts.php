@@ -206,7 +206,7 @@ class PTB_Submission_Posts_Table_CPT extends WP_List_Table {
         $actions = array();
         if (current_user_can('edit_others_posts')) {
             $actions['edit'] = sprintf(
-                    '<a href="' . get_edit_post_link($item->ID) . '">%1$s</a>', __('Edit', 'ptb-submission')
+                    '<span class="edit-button"><a class="post-edit-link" href="' . get_edit_post_link($item->ID) . '">%1$s</a></span>', __('Edit', 'ptb-submission')
             );
             if ($item->post_status != 'publish') {
                 $actions['published'] = sprintf(

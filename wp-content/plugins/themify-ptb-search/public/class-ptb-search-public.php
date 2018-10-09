@@ -2,7 +2,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -893,11 +893,17 @@ class PTB_Search_Public {
                             if ($type === 'text') {
                                 $value = array($value);
                             }
-                            foreach ($value as $ch) {
+							if ($type === 'checkbox' || $type === 'select') {
+                                foreach ($value as $k => &$ch_m) {
+                                    $value[$k] = '"'. $ch_m .'"'; // to fix #7153.
+                                }
+                            }
+							$condition2 = $type === 'radio_button' ? "`meta_value` = '%s'" : "LOCATE('%s',`meta_value`)>0";
+							foreach ($value as $ch) {
                                 $ch = esc_sql($ch);
                                 $condition = !empty($post_id) ? ' AND post_id IN(' . implode(',', array_keys($post_id)) . ')' : '';
-                                $get_values = $wpdb->get_results("SELECT `post_id` FROM `{$wpdb->postmeta}` WHERE `meta_key` = 'ptb_$meta_key' AND LOCATE('{$ch}',`meta_value`)>0 $condition");
-                                if (!empty($get_values)) {
+                                $get_values = $wpdb->get_results("SELECT `post_id` FROM `{$wpdb->postmeta}` WHERE `meta_key` = 'ptb_$meta_key' AND ". sprintf($condition2, $ch) ." $condition");
+								if (!empty($get_values)) {
                                     $ids = array();
                                     foreach ($get_values as $val) {
                                         $ids[] = $val->post_id;

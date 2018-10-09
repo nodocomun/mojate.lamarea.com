@@ -3,13 +3,13 @@
  * Plugin Name:       PTB Extra Fields
  * Plugin URI:        https://themify.me/ptb-addons/extra-fields
  * Description:       This PTB addon adds more additional field types in meta box builder in Post Type Builder.
- * Version:           1.3.5 
+ * Version:           1.3.8
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb_extra
  * Domain Path:       /languages
  *
- * @link              http://themify.me
+ * @link              https://themify.me
  * @since             1.0.0
  * @package           PTB
  *

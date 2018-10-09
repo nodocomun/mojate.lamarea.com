@@ -1,4 +1,14 @@
-<?php if (!empty($meta_data[$args['key']]) && !empty($data['layout'])): ?>
+<?php
+/**
+ * Template to display Gallery field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-gallery.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
+if (!empty($meta_data[$args['key']]) && !empty($data['layout'])): ?>
     <?php
     $class = array();
     if ($data['layout'] !== 'showcase') {

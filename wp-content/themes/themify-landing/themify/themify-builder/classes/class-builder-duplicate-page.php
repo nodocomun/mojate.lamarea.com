@@ -49,7 +49,7 @@ class ThemifyBuilderDuplicatePage {
 		// Actions
 		add_action( 'init', array( $this, 'init' ), 10 );
 		add_action( 'admin_init', array( $this, 'init' ), 10 );
-                add_action('wp_ajax_tb_duplicate_page', array($this, 'duplicate_page_ajaxify'), 10);
+		add_action('wp_ajax_tb_duplicate_page', array($this, 'duplicate_page_ajaxify'), 10);
 	}
 
 	/**
@@ -69,11 +69,11 @@ class ThemifyBuilderDuplicatePage {
 		check_ajax_referer('tb_load_nonce', 'tb_load_nonce');
 		$post_id = (int) $_POST['postid'];
 		$post = get_post($post_id);
-                if(is_object($post)){
-                    $this->edit_link = empty($_POST['tb_is_admin']);
-                    $this->duplicate($post);
-                    echo $this->new_url;
-                }
+		if( is_object($post) ) {
+			$this->edit_link = json_decode( $_POST['tb_is_admin'] );
+			$this->duplicate($post);
+			echo $this->new_url;
+		}
 		wp_die();
 	}
 
@@ -96,10 +96,9 @@ class ThemifyBuilderDuplicatePage {
 		$prefix = $suffix = '';
                 
 		if ( $post->post_type !== 'attachment' ) {
-			$prefix = '';
 			$suffix = ' Copy';
 		}
-		$new_post_author = $this->duplicate_get_current_user();
+		$new_post_author = wp_get_current_user();
 
 		$new_post = array(
 			'menu_order' => $post->menu_order,
@@ -137,11 +136,10 @@ class ThemifyBuilderDuplicatePage {
 		// check if admin
 		if ( $this->edit_link ) {
 			$this->new_url = get_edit_post_link( $new_post_id );
+		} else {
+			// set new url
+			$this->new_url = $post->post_type === 'page' ? get_page_link( $new_post_id ) : get_permalink( $new_post_id );
 		}
-                else{
-                    // set new url
-                    $this->new_url = $post->post_type === 'page'?get_page_link( $new_post_id ):get_permalink( $new_post_id );
-                }
 		return $new_post_id;
 	}
 
@@ -192,7 +190,7 @@ class ThemifyBuilderDuplicatePage {
 				$post_terms = wp_get_object_terms( $post->ID, $taxonomy, array( 'orderby' => 'term_order' ) );
 				$terms = array();
                                 $terms_count = count( $post_terms );
-				for ( $i=0; $i < $terms_count; $i++ ) {
+				for ( $i=0; $i < $terms_count; ++$i ) {
 					$terms[] = $post_terms[ $i ]->slug;
 				}
 				wp_set_object_terms( $new_id, $terms, $taxonomy );
@@ -213,30 +211,10 @@ class ThemifyBuilderDuplicatePage {
 		$children = get_posts( array( 'post_type' => 'any', 'numberposts' => -1, 'post_status' => 'any', 'post_parent' => $post->ID ) );
 		// clone old attachments
 		foreach ( $children as $child ) {
-			if ( $child->post_type === 'attachment' || $child->post_type==$post->post_type){
+			if ( $child->post_type === 'attachment' || $child->post_type===$post->post_type){
                             continue;
                         }
 			$this->duplicate( $child, '', $new_id );
-		}
-	}
-
-	/**
-	 * Return current user
-	 * 
-	 * @access public
-	 * @return bool|object|WP_User
-	 */
-	public function duplicate_get_current_user() {
-		if ( function_exists( 'wp_get_current_user' ) ) {
-                    return wp_get_current_user();
-		} else if ( function_exists( 'get_currentuserinfo' ) ) {
-                    global $userdata;
-                    get_currentuserinfo();
-                    return $userdata;
-		} else {
-                    global $wpdb;
-                    $user_login = $_COOKIE[USER_COOKIE];
-                    return $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE user_login = '%s' LIMIT 1", $user_login ) );
 		}
 	}
         

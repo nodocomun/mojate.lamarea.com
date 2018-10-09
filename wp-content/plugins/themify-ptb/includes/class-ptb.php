@@ -6,7 +6,7 @@
  * A class definition that includes attributes and functions used across both the
  * public-facing side of the site and the dashboard.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB

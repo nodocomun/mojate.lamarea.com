@@ -1,15 +1,15 @@
 <?php
 /**
  * Plugin Name:       PTB Relation
- * Plugin URI:        http://themify.me
- * Description:       Addon to use with Post Type Builder plugin that allows users to relationship between ptb custom post types
- * Version:           1.1.8 
+ * Plugin URI:       https://themify.me/ptb-addons/relation
+ * Description:       Addon to use with Post Type Builder plugin that allows users to set relation between PTB custom post types.
+ * Version:           1.1.9
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb-relation
  * Domain Path:       /languages
  *
- * @link              http://themify.me
+ * @link              https://themify.me
  * @since             1.0.0
  * @package           PTB
  */

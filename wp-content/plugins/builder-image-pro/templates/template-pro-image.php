@@ -106,7 +106,7 @@ if (TFCache::start_cache($mod_name, self::$post_id, array('ID' => $module_ID))):
     ?>
     <!-- module image pro -->
     <div <?php echo self::get_element_attributes($container_props); ?> data-entrance-effect="<?php echo $fields_args['overlay_effect']; ?>" data-exit-effect="<?php echo $out_effect[$fields_args['overlay_effect']]; ?>">
-
+        <!--insert-->
         <?php if ($fields_args['mod_title_image'] !== ''): ?>
             <?php echo $fields_args['before_title'] . apply_filters('themify_builder_module_title', $fields_args['mod_title_image'], $fields_args) . $fields_args['after_title']; ?>
         <?php endif; ?>

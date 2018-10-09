@@ -6,7 +6,7 @@
  *	----------------------------------------------------------------------
  * 
  *  					Copyright (C) Themify
- * 						http://themify.me
+ * 						https://themify.me
  *
  *  To add custom modules to the theme, create a new 'custom-modules.php' file in the theme folder.
  *  They will be added to the theme automatically.

@@ -36,8 +36,8 @@ class PTB_Update_Check {
        
         $this->version = $version;
         $this->slug = $slug;
-        $this->versions_url = 'http://themify.me/versions/versions.xml';
-        $this->package_url = "http://themify.me/files/{$this->name}/{$this->name}.zip";
+        $this->versions_url = 'https://themify.me/versions/versions.xml';
+        $this->package_url = "https://themify.me/files/{$this->name}/{$this->name}.zip";
         add_action('admin_notices', array($this, 'check_version'), 3);
         add_action('admin_enqueue_scripts', array($this, 'enqueue'));
         if (!self::$prompt) {
@@ -183,7 +183,7 @@ class PTB_Update_Check {
      */
     function themify_ptb_validate_login() {
         $response = wp_remote_post(
-            'http://themify.me/files/themify-login.php', array(
+            'https://themify.me/files/themify-login.php', array(
             'timeout' => 300,
             'headers' => array(),
             'body' => array(
@@ -241,7 +241,7 @@ class PTB_Update_Check {
         if ($_GET['login'] === 'true') {
 
             $response = wp_remote_post(
-                    'http://themify.me/files/themify-login.php', array(
+                    'https://themify.me/files/themify-login.php', array(
                 'timeout' => 300,
                 'headers' => array(),
                 'body' => array(

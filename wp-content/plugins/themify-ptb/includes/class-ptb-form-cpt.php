@@ -2,7 +2,7 @@
 /**
  * The edit and add form class of custom post type
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -224,7 +224,7 @@ class PTB_Form_CPT {
                 <div class="ptb_cmb_item_body">
                     <div class="ptb_cmb_input_row">
                         <label for="<?php echo $id; ?>_name" class="ptb_cmb_input_label">
-                            <?php _e("Name", 'ptb'); ?>
+                            <?php _e('Name', 'ptb'); ?>
                         </label>
 
                         <div class="ptb_cmb_input">
@@ -248,7 +248,7 @@ class PTB_Form_CPT {
                     </div>
                     <div class="ptb_cmb_input_row">
                         <label for="<?php echo $id; ?>_description" class="ptb_cmb_input_label">
-                            <?php _e("Description", 'ptb'); ?>
+                            <?php _e('Description', 'ptb'); ?>
                         </label>
 
                         <div class="ptb_cmb_input">
@@ -272,7 +272,7 @@ class PTB_Form_CPT {
                     </div>
                      <div class="ptb_cmb_input_row">
                         <label for="<?php echo $id; ?>_slug" class="ptb_cmb_input_label">
-                            <?php _e("Meta Key", 'ptb'); ?>
+                            <?php _e('Meta Key', 'ptb'); ?>
                         </label>
                         <div class="ptb_cmb_input">
                             <input type="text" id="<?php echo $id; ?>_slug" class="ptb_cmb_slug"/>
@@ -375,17 +375,17 @@ class PTB_Form_CPT {
         // Set custom labels default values
         foreach ($languages as $code => $lng) {
 
-            $this->cpt->cl_add_new[$code] = !empty($this->cpt->cl_add_new[$code]) ? $this->cpt->cl_add_new[$code] : __('Add New', 'ptb');
-            $this->cpt->cl_add_new_item[$code] = !empty($this->cpt->cl_add_new_item[$code])? $this->cpt->cl_add_new_item[$code] : __('Add New %s', 'ptb');
-            $this->cpt->cl_edit_item[$code] = !empty($this->cpt->cl_edit_item[$code])? $this->cpt->cl_edit_item[$code] : __('Edit %s', 'ptb');
-            $this->cpt->cl_new_item[$code] = !empty($this->cpt->cl_new_item[$code])? $this->cpt->cl_new_item[$code] : __('New %s', 'ptb');
-            $this->cpt->cl_all_items[$code] = !empty($this->cpt->cl_all_items[$code])? $this->cpt->cl_all_items[$code] : __('All %s', 'ptb');
-            $this->cpt->cl_view_item[$code] = !empty($this->cpt->cl_view_item[$code])? $this->cpt->cl_view_item[$code] : __('View %s', 'ptb');
-            $this->cpt->cl_search_items[$code] = !empty($this->cpt->cl_search_items[$code])? $this->cpt->cl_search_items[$code] : __('Search %s', 'ptb');
-            $this->cpt->cl_not_found[$code] = !empty($this->cpt->cl_not_found[$code])? $this->cpt->cl_not_found[$code] : __('Not found.', 'ptb');
-            $this->cpt->cl_not_found_in_trash[$code] = !empty($this->cpt->cl_not_found_in_trash[$code])? $this->cpt->cl_not_found_in_trash[$code] : __('Not found in Trash.', 'ptb');
-            $this->cpt->cl_parent_item_colon[$code] = !empty($this->cpt->cl_parent_item_colon[$code])? $this->cpt->cl_parent_item_colon[$code] : __('Parent %s:', 'ptb');
-            $this->cpt->cl_menu_name[$code] = !empty($this->cpt->cl_menu_name[$code])? $this->cpt->cl_menu_name[$code] : __('%s', 'ptb');
+            $this->cpt->add_new[$code] = !empty($this->cpt->add_new[$code]) ? $this->cpt->add_new[$code] : __('Add New', 'ptb');
+            $this->cpt->add_new_item[$code] = !empty($this->cpt->add_new_item[$code])? $this->cpt->add_new_item[$code] : __('Add New %s', 'ptb');
+            $this->cpt->edit_item[$code] = !empty($this->cpt->edit_item[$code])? $this->cpt->edit_item[$code] : __('Edit %s', 'ptb');
+            $this->cpt->new_item[$code] = !empty($this->cpt->new_item[$code])? $this->cpt->new_item[$code] : __('New %s', 'ptb');
+            $this->cpt->all_items[$code] = !empty($this->cpt->all_items[$code])? $this->cpt->all_items[$code] : __('All %s', 'ptb');
+            $this->cpt->view_item[$code] = !empty($this->cpt->view_item[$code])? $this->cpt->view_item[$code] : __('View %s', 'ptb');
+            $this->cpt->search_items[$code] = !empty($this->cpt->search_items[$code])? $this->cpt->search_items[$code] : __('Search %s', 'ptb');
+            $this->cpt->not_found[$code] = !empty($this->cpt->not_found[$code])? $this->cpt->not_found[$code] : __('Not found.', 'ptb');
+            $this->cpt->not_found_in_trash[$code] = !empty($this->cpt->not_found_in_trash[$code])? $this->cpt->not_found_in_trash[$code] : __('Not found in Trash.', 'ptb');
+            $this->cpt->parent_item_colon[$code] = !empty($this->cpt->parent_item_colon[$code])? $this->cpt->parent_item_colon[$code] : __('Parent %s:', 'ptb');
+            $this->cpt->menu_name[$code] = !empty($this->cpt->menu_name[$code])? $this->cpt->menu_name[$code] : __('%s', 'ptb');
         }
 
         add_settings_field(
@@ -622,77 +622,77 @@ class PTB_Form_CPT {
             case PTB_Custom_Post_Type::CL_ADD_NEW :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_ADD_NEW, $this->cpt->cl_add_new, false, __("The add new text. The default is Add New for both hierarchical and non-hierarchical types.", 'ptb')
+                                PTB_Custom_Post_Type::CL_ADD_NEW, $this->cpt->add_new, false, __("The add new text. The default is Add New for both hierarchical and non-hierarchical types.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_ADD_NEW_ITEM :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_ADD_NEW_ITEM, $this->cpt->cl_add_new_item, false, __("The add new item text. Default is Add New Post/Add New Page.", 'ptb')
+                                PTB_Custom_Post_Type::CL_ADD_NEW_ITEM, $this->cpt->add_new_item, false, __("The add new item text. Default is Add New Post/Add New Page.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_EDIT_ITEM:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_EDIT_ITEM, $this->cpt->cl_edit_item, false, __("The edit item text. Default is Edit Post/Edit Page.", 'ptb')
+                                PTB_Custom_Post_Type::CL_EDIT_ITEM, $this->cpt->edit_item, false, __("The edit item text. Default is Edit Post/Edit Page.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_NEW_ITEM:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_NEW_ITEM, $this->cpt->cl_new_item, false, __("The view item text. Default is View Post/View Page.", 'ptb')
+                                PTB_Custom_Post_Type::CL_NEW_ITEM, $this->cpt->new_item, false, __("The view item text. Default is View Post/View Page.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_ALL_ITEMS:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_ALL_ITEMS, $this->cpt->cl_all_items, false, __("The all items text used in the menu. Default is the Name label.", 'ptb')
+                                PTB_Custom_Post_Type::CL_ALL_ITEMS, $this->cpt->all_items, false, __("The all items text used in the menu. Default is the Name label.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_VIEW_ITEM:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_VIEW_ITEM, $this->cpt->cl_view_item, false, __("The view item text. Default is View Post/View Page.", 'ptb')
+                                PTB_Custom_Post_Type::CL_VIEW_ITEM, $this->cpt->view_item, false, __("The view item text. Default is View Post/View Page.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_SEARCH_ITEMS:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_SEARCH_ITEMS, $this->cpt->cl_search_items, false, __("The search items text. Default is Search Posts/Search Pages.", 'ptb')
+                                PTB_Custom_Post_Type::CL_SEARCH_ITEMS, $this->cpt->search_items, false, __("The search items text. Default is Search Posts/Search Pages.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_NOT_FOUND:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_NOT_FOUND, $this->cpt->cl_not_found, false, __("The not found text. Default is No posts found/No pages found.", 'ptb')
+                                PTB_Custom_Post_Type::CL_NOT_FOUND, $this->cpt->not_found, false, __("The not found text. Default is No posts found/No pages found.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_NOT_FOUND_IN_TRASH:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_NOT_FOUND_IN_TRASH, $this->cpt->cl_not_found_in_trash, false, __("The not found in trash text. Default is No posts found in Trash/No pages found in Trash.", 'ptb')
+                                PTB_Custom_Post_Type::CL_NOT_FOUND_IN_TRASH, $this->cpt->not_found_in_trash, false, __("The not found in trash text. Default is No posts found in Trash/No pages found in Trash.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_PARENT_ITEM_COLON:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_PARENT_ITEM_COLON, $this->cpt->cl_parent_item_colon, false, __("The parent text. This string isn't used on non-hierarchical types. In hierarchical ones the default is Parent Page.", 'ptb')
+                                PTB_Custom_Post_Type::CL_PARENT_ITEM_COLON, $this->cpt->parent_item_colon, false, __("The parent text. This string isn't used on non-hierarchical types. In hierarchical ones the default is Parent Page.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Post_Type::CL_MENU_NAME:
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Post_Type::CL_MENU_NAME, $this->cpt->cl_menu_name, false, __("This string is the name to give menu items.", 'ptb')
+                                PTB_Custom_Post_Type::CL_MENU_NAME, $this->cpt->menu_name, false, __("This string is the name to give menu items.", 'ptb')
                 );
                 break;
         }
@@ -860,17 +860,17 @@ class PTB_Form_CPT {
 
             // Extract custom labels
 
-            $cpt->cl_add_new[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ADD_NEW)][$code]);
-            $cpt->cl_add_new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ADD_NEW_ITEM)][$code]);
-            $cpt->cl_edit_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_EDIT_ITEM)][$code]);
-            $cpt->cl_new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NEW_ITEM)][$code]);
-            $cpt->cl_all_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ALL_ITEMS)][$code]);
-            $cpt->cl_view_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_VIEW_ITEM)][$code]);
-            $cpt->cl_search_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_SEARCH_ITEMS)][$code]);
-            $cpt->cl_not_found[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NOT_FOUND)][$code]);
-            $cpt->cl_not_found_in_trash[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NOT_FOUND_IN_TRASH)][$code]);
-            $cpt->cl_parent_item_colon[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_PARENT_ITEM_COLON)][$code]);
-            $cpt->cl_menu_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_MENU_NAME)][$code]);
+            $cpt->add_new[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ADD_NEW)][$code]);
+            $cpt->add_new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ADD_NEW_ITEM)][$code]);
+            $cpt->edit_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_EDIT_ITEM)][$code]);
+            $cpt->new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NEW_ITEM)][$code]);
+            $cpt->all_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_ALL_ITEMS)][$code]);
+            $cpt->view_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_VIEW_ITEM)][$code]);
+            $cpt->search_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_SEARCH_ITEMS)][$code]);
+            $cpt->not_found[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NOT_FOUND)][$code]);
+            $cpt->not_found_in_trash[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_NOT_FOUND_IN_TRASH)][$code]);
+            $cpt->parent_item_colon[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_PARENT_ITEM_COLON)][$code]);
+            $cpt->menu_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Post_Type::CL_MENU_NAME)][$code]);
 
             // Extract advanced options
             /* $cpt->ad_rewrite_slug[ $code ] = isset($input[ $this->get_field_id( PTB_Custom_Post_Type::AD_REWRITE_SLUG ) ][ $code ])
@@ -955,11 +955,9 @@ class PTB_Form_CPT {
      */
     private function get_input_name($key) {
 
-        $name = sprintf(
+        return sprintf(
                 'ptb_plugin_options[%s_post_type_%s]', $this->plugin_name, $key
         );
-
-        return $name;
     }
 
     /**
@@ -974,11 +972,9 @@ class PTB_Form_CPT {
      */
     private function get_input_id($key) {
 
-        $name = sprintf(
+        return sprintf(
                 '%s_post_type_%s', $this->plugin_name, $key
         );
-
-        return $name;
     }
 
     /**
@@ -1027,11 +1023,9 @@ class PTB_Form_CPT {
      */
     private function generate_input_checkbox($id, $value, $title, $checked) {
 
-        $input = sprintf(
+        return sprintf(
                 '<label for="%1$s"><input type="checkbox" name="%2$s" id="%1$s" value="%3$s" %4$s /> %5$s</label><br>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), esc_attr($value), checked($checked, true, false), esc_attr($title)
         );
-
-        return $input;
     }
 
     /**
@@ -1056,11 +1050,7 @@ class PTB_Form_CPT {
                 '</fieldset>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), checked($selected, true, false), checked($selected, false, false), __('Yes', 'ptb'), __('No', 'ptb')
         );
 
-        $description = sprintf('<p class="description">%s</p>', $description);
-
-        $result = empty($description) ? $input : $input . $description;
-
-        return $result;
+        return $input . sprintf('<p class="description">%s</p>', $description);
     }
 
     /**
@@ -1082,7 +1072,6 @@ class PTB_Form_CPT {
             $input = sprintf(
                     '<input type="%1$s" %2$s id="%3$s" name="%4$s" value="%5$s" />', $hidden ? 'hidden' : 'text', $hidden ? '' : 'class="regular-text"', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), esc_attr($value)
             );
-            $result = $input;
         } else {
 
             $languages = PTB_Utils::get_all_languages();
@@ -1111,9 +1100,7 @@ class PTB_Form_CPT {
             }
             $input .= '</ul>';
         }
-        $description = sprintf('<p class="description">%s</p>', $description);
-        $result = empty($description) ? $input : $input . $description;
-        return $result;
+        return $input . sprintf('<p class="description">%s</p>', $description);;
     }
 
     private function generate_select($id, $options_label_value, $selected = '', $description = '') {
@@ -1128,12 +1115,7 @@ class PTB_Form_CPT {
         $result = sprintf(
                 '<select id="%s" name="%s">%s</select>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), $options
         );
-
-        $description = sprintf('<p class="description">%s</p>', $description);
-
-        $result = empty($description) ? $result : $result . $description;
-
-        return $result;
+        return $result . sprintf('<p class="description">%s</p>', $description);
     }
 
     /*     * *************************************************************************************************************** */

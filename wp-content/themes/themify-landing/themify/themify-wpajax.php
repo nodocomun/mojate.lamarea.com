@@ -23,7 +23,7 @@ $themify_ajax_actions = array(
 	'remove_video',
 	'save',
 	'reset_styling',
-	'reset_setting',
+	'reset_settings',
 	'pull',
 	'add_link_field',
 	'media_lib_browse',
@@ -89,7 +89,7 @@ function themify_posts_where($search, &$wp_query ){
  */
 function themify_plupload() {
     $imgid = $_POST['imgid'];
-    check_ajax_referer($imgid . 'themify-plupload');
+    ! empty( $_POST[ '_ajax_nonce' ] ) && check_ajax_referer($imgid . 'themify-plupload');
 	/** Check whether this image should be set as a preset. @var String */
 	$haspreset = isset( $_POST['haspreset'] )? $_POST['haspreset'] : '';
 	/** Decide whether to send this image to Media. @var String */
@@ -382,7 +382,7 @@ function themify_reset_styling(){
  * @since 1.1.3
  * @package themify
  */
-function themify_reset_setting(){
+function themify_reset_settings(){
 	check_ajax_referer( 'ajax-nonce', 'nonce' );
 	$data = explode("&", $_POST['data']);
 	$temp_data = array();
@@ -544,19 +544,45 @@ function themify_refresh_webfonts() {
 }
 
 /**
+ * Get the path to import.php file
+ *
+ * @return string
+ */
+function themify_get_sample_content_file() {
+	if( isset( $_POST['skin'] ) ) {
+		// importing demo content for an skin
+		$resource_file = THEME_DIR . '/skins/' . $_POST['skin'] . '/import.zip';
+	} else {
+		// regular old demo import
+		$resource_file = THEME_DIR . '/sample/import.zip';
+	}
+	$cache_dir = themify_get_cache_dir();
+	$extract_file = $cache_dir['path'] . 'import.php';
+
+	if ( file_exists( $extract_file ) ) {
+		@unlink( $extract_file );
+	}
+
+	if ( ! function_exists( 'WP_Filesystem' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
+	WP_Filesystem();
+	if ( 1 == unzip_file( $resource_file, $cache_dir['path'] ) ) {
+		// extract successful
+	}
+
+	$parse_file = file_exists( $extract_file ) ? $extract_file : $resource_file;
+	return $parse_file;
+}
+
+/**
  * Imports sample contents to replicate the demo site.
  *
  * @since 1.7.6
  */
 function themify_import_sample_content() {
 
-	if( isset( $_POST['skin'] ) ) {
-		// importing demo content for an skin
-		$file = THEME_DIR . '/skins/' . $_POST['skin'] . '/import.php';
-	} else {
-		// regular old demo import
-		$file = THEME_DIR . '/sample/import.php';
-	}
+	$file = themify_get_sample_content_file();
 
 	define( 'ERASEDEMO', false );
 
@@ -575,13 +601,7 @@ function themify_import_sample_content() {
  * @since 1.7.6
  */
 function themify_erase_sample_content() {
-	if( isset( $_POST['skin'] ) ) {
-		// importing demo content for an skin
-		$file = THEME_DIR . '/skins/' . $_POST['skin'] . '/import.php';
-	} else {
-		// regular old demo import
-		$file = THEME_DIR . '/sample/import.php';
-	}
+	$file = themify_get_sample_content_file();
 
 	define( 'ERASEDEMO', true );
 

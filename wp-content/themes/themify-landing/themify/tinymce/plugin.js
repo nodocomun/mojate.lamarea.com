@@ -82,6 +82,8 @@ tinymce.PluginManager.add('themifyMenu', function( editor, url ) {
 									{ type : 'textbox', name : field.name },
 									{ type : 'button', text : field.text, onclick : function(){
 										var $this = jQuery( this.$el );
+										if(document.getElementById("themify_builder_site_canvas_iframe"))
+											var Themify_Icons = document.getElementById("themify_builder_site_canvas_iframe").contentWindow.Themify_Icons;
 										Themify_Icons.target = $this.prev(); // set the input text box that recieves the value
 										Themify_Icons.showLightbox( Themify_Icons.target.val() ); // show the icon picker lightbox
 									} }

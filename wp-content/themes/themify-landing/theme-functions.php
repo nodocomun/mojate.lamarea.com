@@ -6,7 +6,7 @@
  *	----------------------------------------------------------------------
  *
  *  					Copyright (C) Themify
- * 						http://themify.me
+ * 						https://themify.me
  *
  *  To add custom PHP functions to the theme, create a child theme (https://themify.me/docs/child-theme) and add it to the child theme functions.php file.
  *  They will be added to the theme automatically.
@@ -35,6 +35,9 @@ add_filter( 'themify_parallax_header', 'themify_disable_parallax_header_on_mobil
 
 // Set class on body tag according to layout width
 add_filter( 'body_class', 'themify_theme_body_class', 99 );
+
+// Exclude CPT for sidebar
+add_filter( 'themify_exclude_CPT_for_sidebar', 'themify_CPT_exclude_sidebar' );
 
 /**
  * Enqueue Stylesheets and Scripts
@@ -468,6 +471,24 @@ if ( ! function_exists( 'themify_theme_register_sidebars' ) ) {
 	}
 }
 
+if ( ! function_exists('themify_CPT_exclude_sidebar') ) {
+	/**
+	 * Exclude Custom Post Types
+	 */
+	function themify_CPT_exclude_sidebar($CPT = array()) {
+		
+		$landing = array('portfolio', 'event');
+		
+		if(empty($CPT)){
+			$CPT = array('post', 'page', 'attachment', 'tbuilder_layout', 'tbuilder_layout_part', 'section');
+		}
+
+		$CPT = array_merge($CPT, $landing);
+
+		return $CPT;
+	}
+}
+
 if ( ! function_exists( 'themify_theme_comment' ) ) {
 	/**
 	 * Custom Theme Comment
@@ -834,7 +855,6 @@ function themify_theme_register_required_plugins() {
             'notice_cannot_activate'          => _n_noop( 'Sorry, but you do not have the correct permissions to activate the %s plugin. Contact the administrator of this site for help on getting the plugin activated.', 'Sorry, but you do not have the correct permissions to activate the %s plugins. Contact the administrator of this site for help on getting the plugins activated.', 'themify' ), // %1$s = plugin name(s).
             'notice_ask_to_update'            => _n_noop( 'The following plugin needs to be updated to its latest version to ensure maximum compatibility with this theme: %1$s.', 'The following plugins need to be updated to their latest version to ensure maximum compatibility with this theme: %1$s.', 'themify' ), // %1$s = plugin name(s).
             'notice_cannot_update'            => _n_noop( 'Sorry, but you do not have the correct permissions to update the %s plugin. Contact the administrator of this site for help on getting the plugin updated.', 'Sorry, but you do not have the correct permissions to update the %s plugins. Contact the administrator of this site for help on getting the plugins updated.', 'themify' ), // %1$s = plugin name(s).
-            'install_link'                    => is_multisite() ? _n_noop( '', '', 'themify' ) : _n_noop( 'Begin installing plugin', 'Begin installing plugins', 'themify' ),
             'activate_link'                   => _n_noop( 'Begin activating plugin', 'Begin activating plugins', 'themify' ),
             'return'                          => __( 'Return to Required Plugins Installer', 'themify' ),
             'plugin_activated'                => __( 'Plugin activated successfully.', 'themify' ),

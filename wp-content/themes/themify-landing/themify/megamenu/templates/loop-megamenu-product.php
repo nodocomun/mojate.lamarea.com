@@ -1,14 +1,17 @@
 <?php
 /**
  * Template for displaying posts inside mega menus
+ *
+ * To override this template copy it to <theme_root>/includes/ directory.
+ *
  * @package themify
  * @since 1.0.0
  */
 
 global $post, $product;
 $dimensions = apply_filters( 'themify_mega_menu_image_dimensions', array(
-	'width'  => 180,
-	'height' => 120
+	'width'  => themify_get( 'setting-mega_menu_image_width', 180 ),
+	'height' => themify_get( 'setting-mega_menu_image_height', 120 )
 ) );
 ?>
 

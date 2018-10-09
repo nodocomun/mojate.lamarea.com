@@ -20,6 +20,8 @@ global $themify;
 	<div id="layout" class="pagewidth clearfix">
 
 		<?php themify_content_before(); // hook ?>
+
+
 		<!-- content -->
 		<div id="content" class="list-post">
 			<?php themify_content_start(); // hook ?>
@@ -40,7 +42,16 @@ global $themify;
 				<?php comments_template(); ?>
 			<?php endif; ?>
 
+
 			<?php themify_content_end(); // hook ?>
+					<?php if (get_post(get_post_thumbnail_id())->post_excerpt) { // search for if the image has caption added on it ?>
+    <span class="featured-image-caption">
+        <?php echo wp_kses_post(get_post(get_post_thumbnail_id())->post_excerpt); // displays the image caption ?>
+    </span>
+<?php } ?>
+
+
+
 		</div>
 		<!-- /content -->
 		<?php themify_content_after(); // hook ?>

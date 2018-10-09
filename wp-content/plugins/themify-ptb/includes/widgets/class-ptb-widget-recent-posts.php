@@ -28,7 +28,20 @@ class PTB_Widget_Recent_Posts extends WP_Widget {
             'description' => __('PTB Recent Posts.','ptb')
         );
         parent::__construct('ptb-recent-posts', __('PTB Recent Posts','ptb'), $widget_ops);
+		add_filter( 'query_vars',  array( $this, 'add_query_vars_filter') );
     }
+
+	/**
+     * Adds 'ptb_paged' to query_vars
+     *
+     * @since 1.4.8
+     * @access public
+     *
+     */
+	function add_query_vars_filter( $vars ){
+	  $vars[] = "ptb_paged";
+	  return $vars;
+	}
 
     /**
      * Outputs the content for the current PTB Recent Posts widget instance.
@@ -48,6 +61,7 @@ class PTB_Widget_Recent_Posts extends WP_Widget {
 
             $title = !empty($instance['title'])?esc_attr($instance['title']):'';
             $title = apply_filters('widget_title',  $title, $instance, $this->id_base);
+			$instance['ptb_widget'] = 1;
             unset($instance['title']);
             $shortcode = '[ptb';
             foreach ($instance as $k=>$v){

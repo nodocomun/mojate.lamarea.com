@@ -22,13 +22,14 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
 	 */
 	public static function template( $rows, $row, $cols, $col, $builder_id, $order_classes = array(), $echo = false) {
 		$grid_class = trim(str_replace(array('first','last'),array('',''),$col['grid_class']));
-                $print_column_classes = array('tb-column',$grid_class);
+                $print_column_classes = array('module_column tb-column',$grid_class);
+                $column_tag_attrs = array();
                 $is_styling = !empty($col['styling']);
                 if(!Themify_Builder::$frontedit_active){
                     if (isset( $order_classes[ $cols ] ) ){
                         $print_column_classes[] = $order_classes[ $cols ];
                     }
-                    $print_column_classes[] = 'module_column tb_' . $builder_id . '_column';
+                    $print_column_classes[] = 'tb_' . $builder_id . '_column';
                     if (isset($col['column_order'])) {
                         $print_column_classes[] = 'module_column_' . $col['column_order'].' module_column_' . $builder_id . '-' . $row['row_order'] . '-' . $col['column_order'];
                     }
@@ -36,9 +37,6 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
                 if($is_styling){
                     if (!empty($col['styling']['background_repeat'])) {
                             $print_column_classes[] = $col['styling']['background_repeat'];
-                    }
-                    if (!empty($col['styling']['background_image'])  && !empty($col['styling']['background_position'])) {
-                            $print_column_classes[] = 'bg-position-' . $col['styling']['background_position'];
                     }
                     if(isset($col['styling']['background_type']) && $col['styling']['background_type']==='image' && isset($col['styling']['background_zoom']) && $col['styling']['background_zoom']==='zoom' && $col['styling']['background_repeat']=='repeat-none'){
                             $print_column_classes[] = 'themify-bg-zoom';
@@ -49,9 +47,17 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
                     
                 }
 		$print_column_classes = implode(' ', $print_column_classes);
+        $column_tag_attrs['class'] = esc_attr( $print_column_classes );
+
+        if(!empty($col['grid_width']) && !Themify_Builder::$frontedit_active) {
+            $column_tag_attrs['style'] = 'width: ' . $col['grid_width'] . '%';
+        }
+
+        if  ( isset( $col['element_id'] ) ) 
+            $column_tag_attrs['data-id'] = $col['element_id'];
 
 		// background video
-                $video_data = $is_styling && Themify_Builder_Model::is_premium()?Themify_Builder_Include::get_video_background($col['styling']):'';
+        $video_data = $is_styling && Themify_Builder_Model::is_premium()?Themify_Builder_Include::get_video_background($col['styling']):'';
 
 		if ( ! $echo ) {
 			$output = PHP_EOL; // add line break
@@ -60,12 +66,12 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
 
 		// Start Column Render ######
 		?>
-
-		<div <?php if(!empty($col['grid_width']) && !Themify_Builder::$frontedit_active):?>style="width:<?php echo $col['grid_width']?>%"<?php endif;?> class="<?php  echo esc_attr($print_column_classes); ?>" <?php echo $video_data; ?>>
+        <div <?php echo self::get_element_attributes( $column_tag_attrs ); ?> <?php echo $video_data; ?>>
                     <?php
                         if ($is_styling) {
                                 $column_order = $row['row_order'] . '-' . $col['column_order'];
                                 do_action('themify_builder_background_styling',$builder_id,$col,$column_order,'column');	
+                                self::show_frame($col['styling']);
                             }
                     ?>
                     <?php if (!empty($col['modules'])):?>
@@ -84,8 +90,6 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
                         </div>
                     <?php endif;?>
 		</div>
-		<!-- /.tb-column -->
-		
 		<?php
 		// End Column Render ######
 
@@ -126,9 +130,6 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
                     if (!empty($sub_col['styling']['background_repeat'])) {
                             $print_sub_col_classes[] = $sub_col['styling']['background_repeat'];
                     }
-                    if (!empty($sub_col['styling']['background_image']) && !empty($sub_col['styling']['background_position'])) {
-                            $print_sub_col_classes[] = 'bg-position-' . $sub_col['styling']['background_position'];
-                    }
                     if (!empty($sub_col['styling']['custom_css_column'])) {
                             $print_sub_col_classes[] = $sub_col['styling']['custom_css_column'];
                     }
@@ -151,6 +152,7 @@ class Themify_Builder_Component_Column extends Themify_Builder_Component_Base {
                         if ($is_styling) {
                             $sub_column_order = $rows . '-' . $cols . '-' . $modules . '-' . $col_key;
                             do_action('themify_builder_background_styling',$builder_id,$sub_col,$sub_column_order,'sub_column');
+                            self::show_frame($sub_col['styling']);
                         }
                    ?>
                     <?php if (!empty($sub_col['modules'])):?>

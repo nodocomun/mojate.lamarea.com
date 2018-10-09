@@ -3,7 +3,7 @@
 Plugin Name:  Themify Metabox API
 Version:      1.0.2
 Author:       Themify
-Author URI:   http://themify.me/
+Author URI:   https://themify.me/
 Description:  Generate custom metaboxes for admin pages easily and efficiently.
 Text Domain:  themify
 Domain Path:  /languages
@@ -19,15 +19,15 @@ if( ! defined( 'THEMIFY_METABOX_URI' ) ) {
 }
 
 if( ! function_exists( 'themify_metabox_bootstrap' ) ) :
-    /**
-     * Load and bootstrap Themify Metabox API
-     *
-     * @since 1.0
-     */
-    function themify_metabox_bootstrap() {
-            if( ! class_exists( 'Themify_Metabox' ) ) {
-                    require_once( THEMIFY_METABOX_DIR . 'includes/themify-metabox-core.php' );
-            }
-    }
+/**
+ * Load and bootstrap Themify Metabox API
+ *
+ * @since 1.0
+ */
+function themify_metabox_bootstrap() {
+	if( ! class_exists( 'Themify_Metabox' ) ) {
+		require_once( THEMIFY_METABOX_DIR . 'includes/themify-metabox-core.php' );
+	}
+}
 endif;
 add_action( 'after_setup_theme', 'themify_metabox_bootstrap', 20 );

@@ -34,10 +34,10 @@ List Layout
 	line-height: 1.3em;
 	color: inherit;
 	text-align: right;
-	padding-right: 5%;
 	padding-top: 5px;
 	float: left;
-	width: 19%;
+	width: 20%;
+	box-sizing:  border-box;
 }
 .module-timeline.layout-list .module-timeline-dot {
 	position: absolute;
@@ -68,10 +68,6 @@ List Layout
 	top: 50%;
 	left: 50%;
 	font-size: 26px;
-	-webkit-transform: translateX(-50%) translateY(-50%);
-	-moz-transform: translateX(-50%) translateY(-50%);
-	-ms-transform: translateX(-50%) translateY(-50%);
-	-o-transform: translateX(-50%) translateY(-50%);
 	transform: translateX(-50%) translateY(-50%);
 }
 .module-timeline.layout-list .module-timeline-title {
@@ -87,6 +83,7 @@ List Layout
 .module-timeline.layout-list .module-timeline-content-wrap {
 	width: 70%;
 	float: right;
+	box-sizing:  border-box;
 }
 @media (max-width: 880px) {
 	.module-timeline.layout-list .module-timeline-title {

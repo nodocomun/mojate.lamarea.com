@@ -30,7 +30,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 		}
 		
 		public function add_plugin_page(){
-			if(Themify_Builder_Model::hasAccess()){
+			if( Themify_Builder_Model::hasAccess() ){
 				// This page will be under "Settings"
 				$name = Themify_Builder_Model::is_premium()?__( 'Themify Builder', 'themify' ):__( 'Builder Lite', 'themify' );
 				add_menu_page( $name, $name, 'manage_options', self::$slug, array( $this, 'create_admin_page'), plugins_url( THEMIFY_BUILDER_NAME.'/themify/img/favicon.png' ), 50 );
@@ -61,7 +61,6 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 
 			?>
 		<div class="wrap">
-			<?php screen_icon(); ?>
 			<h2><?php _e('Themify Builder', 'themify') ?></h2>			
 			<form method="post" action="options.php">
 				<div class="icon32" id="icon-options-general"><br /></div><h2 class="nav-tab-wrapper themify-nav-tab-wrapper">
@@ -78,7 +77,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 
 						foreach ( $tabs as $name => $label ) {
 							echo '<a href="' . admin_url( 'admin.php?page=' . self::$slug. '&tab=' . $name ) . '" class="nav-tab ';
-							if( $this->current_tab == $name ) echo 'nav-tab-active';
+							if( $this->current_tab === $name ) echo 'nav-tab-active';
 							echo '">' . $label . '</a>';
 						}
 					?>
@@ -113,7 +112,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 					<p><label><?php _e('Username', 'themify'); ?></label> <input type="text" name="username" class="username" value=""/></p>
 					<p><label><?php _e('Password', 'themify'); ?></label> <input type="password" name="password" class="password" value=""/></p>
 					<input type="hidden" value="true" name="login" />
-					<p class="pushlabel"><input name="login" type="submit" value="Login" class="button themify-builder-upgrade-login" /></p>
+					<p class="pushlabel"><input name="login" type="submit" value="Login" class="button tb_upgrade_login" /></p>
 					</form>
 				</div>
 				<div class="show-error">
@@ -122,7 +121,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			</div>
 			<!-- /prompts -->
 
-			<script type="text/javascript" defer>
+			<script type="text/javascript">
 				function switch_image_field() {
                                     var img_field =jQuery('.img_field').closest('tr'),
                                         size = jQuery('.image_global_size_field').closest('tr');
@@ -134,11 +133,8 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 						img_field.hide();
 					}	
 				}
-				
 				switch_image_field();
-				jQuery('.disable_img_php').on('click', function(e){
-					switch_image_field();
-				});
+				jQuery('.disable_img_php').on('click', switch_image_field);
 			</script>
 		</div>
 		<?php
@@ -184,6 +180,24 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 						__( 'Role Access Settings', 'themify' ),
 						'',
 						self::$slug
+					);
+
+					add_settings_field(
+						'builder_backend',
+						__( 'Builder Backend Role Access', 'themify' ), 
+						array( $this, 'role_access_fields' ), 
+						self::$slug,
+						'setting_builder_role_access_section',
+						array( 'mode' => 'backend' )
+					);
+
+					add_settings_field(
+						'builder_frontend',
+						__( 'Builder Frontend Role Access', 'themify' ), 
+						array( $this, 'role_access_fields' ), 
+						self::$slug,
+						'setting_builder_role_access_section',
+						array( 'mode' => 'frontend' )
 					);
 
 				break;
@@ -293,6 +307,14 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 						);
 
 						add_settings_field(
+							'builder_disable_wp_editor', 
+							__( 'Disable WordPress Editor', 'themify' ),
+							array( $this, 'builder_disable_wp_editor' ),
+							self::$slug,
+							'setting_builder_section'
+						);
+
+						add_settings_field(
 							'builder_google_fonts', 
 							__( 'Google Fonts List', 'themify' ), 
 							array( $this, 'builder_show_all_google_fonts' ), 
@@ -334,10 +356,10 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$settings = get_option( $this->option_name );
 			$custom_css = isset( $settings['custom_css-custom_css'] ) ? $settings['custom_css-custom_css'] : false;
 			if ( $custom_css ){
-				echo PHP_EOL . '<!-- Builder Custom Style -->' . PHP_EOL;
-				echo '<style type="text/css">' . PHP_EOL;
-				echo $custom_css . PHP_EOL;
-				echo '</style>' . PHP_EOL . '<!-- / end builder custom style -->' . PHP_EOL;
+				echo PHP_EOL . '<!-- Builder Custom Style -->' . PHP_EOL,
+                                    '<style type="text/css">' . PHP_EOL,
+                                    $custom_css . PHP_EOL,
+                                    '</style>' . PHP_EOL . '<!-- / end builder custom style -->' . PHP_EOL;
 			}
 		}
 
@@ -354,7 +376,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 
 			$all = array_merge($exist_data, $input);
 			if(class_exists('TFCache')){
-				$remove = $all['builder_is_active']!='enable' || isset($all['builder_disable_cache']);
+				$remove = $all['builder_is_active']!=='enable' || isset($all['builder_disable_cache']);
 				TFCache::rewrite_htaccess($remove);
 			}
 			return $all;
@@ -367,11 +389,11 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 		function builder_active_field(){
 			$selected = isset( $this->option_value[$this->current_tab.'_is_active'] ) ? $this->option_value[$this->current_tab.'_is_active'] : 'enable';
 			?>
-			<select class="themify-builder-is-active" name="<?php echo esc_attr( $this->option_name . '['.$this->current_tab.'_is_active]' ); ?>">
+			<select class="tb_is_active" name="<?php echo esc_attr( $this->option_name . '['.$this->current_tab.'_is_active]' ); ?>">
 				<option value="enable" <?php selected( $selected, 'enable'); ?>><?php _e('Enable', 'themify') ?></option>
 				<option value="disable" <?php selected( $selected, 'disable'); ?>><?php _e('Disable', 'themify') ?></option>
 			</select>
-                        <br/><small style="display:none" class="pushlabel" data-show-if-element=".themify-builder-is-active" data-show-if-value="disable">
+                        <br/><small style="display:none" class="pushlabel" data-show-if-element=".tb_is_active" data-show-if-value="disable">
                             <?php echo esc_html__( 'WARNING: When Builder is disabled, all Builder content/layout will not appear. They will re-appear once Builder is enabled.', 'themify' ) ?>
                         </small>
                         <?php
@@ -379,20 +401,18 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 
 		function builder_exclude_field() {
 			$modules = Themify_Builder_Model::get_modules( 'all' );
-			?>
-
-			<?php foreach( $modules as $k => $v ): ?>
-                            <?php
-                            $name = $this->current_tab . '_exclude_module_' . $v['id'];
-                            $field_name = $this->option_name . '['.$name.']';
-                            $mod_checked = isset($this->option_value[$name] ) ? $this->option_value[$name] : 0; 
-                            ?>
-                            <p>
-                                <input id="exclude_module_<?php echo $v['id']; ?>" type="checkbox" value="1" name="<?php echo $field_name; ?>" <?php checked( $mod_checked, 1 ); ?>>
-                                <label for="exclude_module_<?php echo $v['id']; ?>"><?php echo sprintf(__('Exclude %s module', 'themify'), $v['name']); ?></label>
-                            </p>
-			<?php endforeach; ?>
-			<?php
+			
+			foreach( $modules as $k => $v ) :
+				$name = $this->current_tab . '_exclude_module_' . $v['id'];
+				$field_name = $this->option_name . '['.$name.']';
+				$mod_checked = isset($this->option_value[$name] ) ? $this->option_value[$name] : 0; 
+				?>
+                                    <p>
+                                        <input id="exclude_module_<?php echo $v['id']; ?>" type="checkbox" value="1" name="<?php echo $field_name; ?>" <?php checked( $mod_checked, 1 ); ?>>
+                                        <label for="exclude_module_<?php echo $v['id']; ?>"><?php echo sprintf(__('Exclude %s module', 'themify'), $v['name']); ?></label>
+                                    </p>
+				<?php
+			endforeach;
 		}
 
 		/**
@@ -422,7 +442,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 						wp_kses_post( __('(enable it for faster page load)', 'themify') )
 				);
 				if(!Themify_Builder_Model::is_premium()){
-					$out='<div class="themify_builder_lite">'.$out.'</div>';
+					$out='<div class="tb_lite">'.$out.'</div>';
 				}
 				echo $out;
 			}
@@ -441,7 +461,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$pre = $this->current_tab . '_';
 			$out='<div style="display: none" data-show-if-element=".builder-disable-cache:checked" data-show-if-value="enable" data-sync-row-el="th">';
 			$expire =  isset( $this->option_value[$pre.'cache_expiry'] )?$this->option_value[$pre.'cache_expiry']:'';
-			$expire = $expire>0?intval($expire):2;
+			$expire = $expire>0?(int)$expire:2;
 			$out.=sprintf('<input type="text" class="width2" value="%s" name="%s" />  &nbsp;&nbsp;<span>%s</span>',
 					$expire,
 					 $this->option_name . '[' . $pre . 'cache_expiry' . ']' ,
@@ -457,7 +477,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			);
 			$out.='</div>';
 			if(!Themify_Builder_Model::is_premium()){
-				$out='<div class="themify_builder_lite">'.$out.'</div>';
+				$out='<div class="tb_lite">'.$out.'</div>';
 			}
 			echo $out;
 		}
@@ -490,6 +510,17 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 				wp_kses_post( __( 'Disable Builder shortcuts (eg. disable shortcut like Cmd+S = save)', 'themify') )
 			);
 			echo $out;
+		}
+
+		function builder_disable_wp_editor() {
+			$key = $this->current_tab . '_disable_wp_editor';
+
+			printf( '<p><label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s"%3$s> %4$s</label></p>'
+				, $key
+				, $this->option_name . '[' . $key . ']'
+				, checked( true, isset( $this->option_value[$key] ), false )
+				, wp_kses_post( __( 'Disable WordPress editor when Builder is in use', 'themify' ) )
+			);
 		}
 
 		function builder_show_all_google_fonts() {
@@ -545,7 +576,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			);
 			$output .= sprintf('<p><label for="%s" class="label">%s</label><br><select id="%s" name="%s">%s</select></p>',
 				$pre . 'parallax_scroll' ,
-				esc_html__( 'Parallax Scrolling', 'themify' ),
+				esc_html__( 'Float Scrolling', 'themify' ),
 				$pre . 'parallax_scroll' ,
 				$this->option_name . '[' .$pre . 'parallax_scroll]' ,
 				sprintf( '<option value="" %s></option>'
@@ -579,8 +610,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$bp_tablet = ! empty( $this->option_value[ $pre . 'tablet'] ) ? $this->option_value[ $pre . 'tablet'] : $break_points['tablet'][1];
 			$bp_mobile = ! empty( $this->option_value[ $pre . 'mobile'] )  ? $this->option_value[ $pre . 'mobile'] : $break_points['mobile'];
 
-			$out = '';
-			$out .= sprintf( '<p class="clearfix"><span class="label">%s</span></p>', esc_html__( 'Responsive Breakpoints:', 'themify' ) );
+			$out= sprintf( '<p class="clearfix"><span class="label">%s</span></p>', esc_html__( 'Responsive Breakpoints:', 'themify' ) );
 			$out .= sprintf( '<div class="themify-ui-slider clearfix"><div class="themify-slider-label label">%s</div><div class="label input-range width10"><div class="range-slider width8"></div><input type="text" name="%s" value="%s" data-min="%d" data-max="%d" class="width4" readonly> px</div></div>',
 				esc_html__( 'Tablet Landscape', 'themify' ),
 				$this->option_name . '[' . $pre . 'tablet_landscape' . ']',
@@ -606,7 +636,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 				$bp_mobile
 			);
 			if(!Themify_Builder_Model::is_premium()){
-				$out='<div class="themify_builder_lite">'.$out.'</div>';
+				$out='<div class="tb_lite">'.$out.'</div>';
 			}
 			echo $out;
 		}
@@ -615,10 +645,10 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$name = $this->current_tab . '-img_settings_use';
 			$field_name = $this->option_name . '['.$name.']';
 			$checked = isset($this->option_value[$name]) ? $this->option_value[$name] : '';
-			echo '<input id="themify_setting-img_settings_use" type="checkbox" name="'.$field_name.'" class="disable_img_php" value="1" '.checked( $checked, 1, false ).'/>';
-			echo '<label for="themify_setting-img_settings_use">&nbsp; '.__('Disable image script globally',
-					'themify').'</label>';
-			echo '<br /><span><small>'.__('(WordPress Featured Image or original images will be used)', 'themify').'</small></span>';
+			echo '<input id="themify_setting-img_settings_use" type="checkbox" name="'.$field_name.'" class="disable_img_php" value="1" '.checked( $checked, 1, false ).'/>',
+                            '<label for="themify_setting-img_settings_use">&nbsp; '.__('Disable image script globally',
+					'themify').'</label>',
+                            '<br /><span><small>'.__('(WordPress Featured Image or original images will be used)', 'themify').'</small></span>';
 		}
 
 		function image_global_field() {
@@ -629,44 +659,86 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$selected = isset($this->option_value[$name]) ? $this->option_value[$name] : '';
 			echo '<select name="'.$field_name.'" class="image_global_size_field">';
 			foreach($feature_sizes as $option){
-				echo '<option value="' . esc_attr( $option['value'] ) . '"'.selected( $selected, $option['value'] ).'>' . esc_html( $option['name'] ) . '</option>';
+				echo '<option value="' . $option['value'] . '"'.selected( $selected, $option['value'] ).'>' . esc_html( $option['name'] ) . '</option>';
 			}
 			echo '</select>';
+		}
+
+		function role_access_fields( $atts ) {
+			global $wp_roles;
+
+			$prefix = 'setting-' . $atts[ 'mode' ] . '-';
+			$roles = $wp_roles->get_names();
+			$role_options = array(
+				'default' => __( 'Default', 'themify' ),
+				'enable' => __( 'Enable', 'themify' ),
+				'disable' => __( 'Disable', 'themify' )
+			);
+
+			// Remove the adminitrator and subscriber user role from the array
+			unset( $roles['administrator']);
+
+			// Remove all the user roles with no "edit_posts" capability
+			foreach( $roles as $role => $slug ) {
+				if( empty( $wp_roles->roles[$role]['capabilities']['edit_posts'] ) ){
+					unset( $roles[$role] );
+                                }
+			}
+
+			printf( '<ul%s>', ! Themify_Builder_Model::is_premium() ? ' class="tb_lite"' : '' );
+			
+			foreach( $roles as $role => $slug ) :
+				$option_name = $this->option_name . '[' . $prefix . $role . ']';
+				$this->option_value = get_option( $this->option_name );
+				$value = isset( $this->option_value[ $prefix . $role ] )
+					? $this->option_value[ $prefix . $role ] : 'default'; ?>
+
+				<li class="role-access-controller">
+					<div class="role-title"><?php echo esc_attr( $slug ); ?></div>
+
+					<?php foreach( $role_options as $key => $label ) : ?>
+						<div class="role-option role-<?php echo $key; ?>">
+							<?php printf( '<input type="radio" id="%1$s-%2$s" name="%2$s" value="%1$s" %3$s>', $key, esc_attr( $option_name ), checked( $value, $key, false ) ); ?>
+							<?php printf( '<label for="%s-%s">%s</label>', $key, esc_attr( $option_name ), $label ); ?>
+						</div>
+					<?php endforeach; ?>
+				</li>
+			<?php endforeach;
+			echo '</ul>';
 		}
 
 		function image_quality_field() {
 			$name = $this->current_tab.'-img_settings_quality';
 			$field_name = $this->option_name . '['.$name.']';
 			$value = isset($this->option_value[$name]) ? $this->option_value[$name] : '';
-			echo '<input type="text" name="'.$field_name.'" value="'.$value.'" class="img_field">';
-			echo '&nbsp; <small>'. __('max 100 (higher = better quality, but bigger file size)', 'themify') .'</small>';
+			echo '<input type="text" name="'.$field_name.'" value="'.$value.'" class="img_field">','&nbsp; <small>'. __('max 100 (higher = better quality, but bigger file size)', 'themify') ,'</small>';
 		}
 
 		function image_crop_align_field() {
 			$options = array(
-				array("value" => "c", "name" => __('Center', 'themify')),
-				array("value" => "t", "name" => __('Top', 'themify')),
-				array("value" => "tr",	"name" => __('Top Right', 'themify')),
-				array("value" => "tl",	"name" => __('Top Left', 'themify')),
-				array("value" => "b",	"name" => __('Bottom', 'themify')),
-				array("value" => "br",	"name" => __('Bottom Right', 'themify')),
-				array("value" => "bl",	"name" => __('Bottom Left', 'themify')),
-				array("value" => "l",	"name" => __('Left', 'themify')),
-				array("value" => "r",	"name" => __('Right', 'themify'))
+				array('value' => 'c', 'name' => __('Center', 'themify')),
+				array('value' => 't', 'name' => __('Top', 'themify')),
+				array('value' => 'tr',	'name' => __('Top Right', 'themify')),
+				array('value' => 'tl',	'name' => __('Top Left', 'themify')),
+				array('value' => 'b',	'name' => __('Bottom', 'themify')),
+				array('value' => 'br',	'name' => __('Bottom Right', 'themify')),
+				array('value' => 'bl',	'name' => __('Bottom Left', 'themify')),
+				array('value' => 'l',	'name' => __('Left', 'themify')),
+				array('value' => 'r',	'name' => __('Right', 'themify'))
 			);
 			$name = $this->current_tab .'-img_settings_crop_option';
 			$field_name = $this->option_name . '['.$name.']';
 			echo '<select name="'.$field_name.'" class="img_field"><option></option>';
 			foreach($options as $option){
 				$selected = isset( $this->option_value[$name] ) ? $this->option_value[$name] : '';
-					echo '<option value="' . esc_attr( $option['value'] ) . '" '.selected( $selected, $option['value']).'>' . esc_html( $option['name'] ) . '</option>';
+                                    echo '<option value="' . $option['value']  . '" '.selected( $selected, $option['value']).'>' . esc_html( $option['name'] ) . '</option>';
 				}
 			echo '</select>';
 		}
 
 		function image_vertical_crop_field() {
 			$options_vertical = array(
-				array('name'=> '',					 'value' => ''),
+				array('name'=> '','value' => ''),
 				array('name'=> __('Yes', 'themify'), 'value' => 'yes'),
 				array('name'=> __('No', 'themify'),	 'value' => 'no')
 			);
@@ -677,7 +749,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			foreach($options_vertical as $option_vertical){
 				echo '<option value="' . esc_attr( $option_vertical['value'] ) . '"'.selected( $selected, $option_vertical['value'] ).'>' . esc_html( $option_vertical['name'] ) . '</option>';
 			}
-			echo '</select>&nbsp; <small>' . __('(Select \'no\' to disable vertical cropping globally)', 'themify') . '</small>';
+			echo '</select>&nbsp; <small>' . __('(Select \'no\' to disable vertical cropping globally)', 'themify') , '</small>';
 		}
 
 		function custom_css_field(){
@@ -687,7 +759,7 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			$out.=isset( $this->option_value[$name] ) ? $this->option_value[$name] : '';
 			$out.='</textarea>';
 			if(!Themify_Builder_Model::is_premium()){
-				$out='<div class="themify_builder_lite">'.$out.'</div>';
+				$out='<div class="tb_lite">'.$out.'</div>';
 			}
 			echo $out;
 		}
@@ -712,13 +784,13 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 		}
 
 		function queue_top_pages( $pages ) {
-			array_push( $pages, 'toplevel_page_themify-builder' );
-			return $pages;
+                    $pages[] =  'toplevel_page_themify-builder' ;
+                    return $pages;
 		}
 
 		function queue_pagenow( $pagenows ) {
-			array_push( $pagenows, 'themify-builder' );
-			return $pagenows;
+                    $pagenows[] =  'themify-builder' ;
+                    return $pagenows;
 		}
 
 		function load_enqueue_scripts( $page ) {
@@ -741,16 +813,13 @@ if ( ! class_exists( 'Themify_Builder_Options' ) ) {
 			.width8 { width: 300px; }
 			.width4 { width: 80px; }
 			.width10 { width: 68%; }
-
 			@media only screen and (max-width: 820px) {
-				.width4,
-				.width8 {
-					max-width: 100%;
-				}
+                            .width4,.width8 {
+                                max-width: 100%;
+                            }
 			}
 			</style>';
 		}
 		
 	}
 }
-?>

@@ -63,10 +63,9 @@
 	// Get border properties.
 	function getBorder(borderSide) {
 		var $color = getColor(borderSide);
-		return  borderSide.style && 'none' !== borderSide.style && borderSide.width
-				?
-				borderSide.width + 'px ' + borderSide.style + ($color ? ' ' + $color : '') :
-				false;
+		return borderSide.style && 'none' !== borderSide.style && borderSide.width
+			? borderSide.width + 'px ' + borderSide.style + ( $color ? ' ' + $color : '' )
+			: borderSide.style && 'none' === borderSide.style ? 'none' : false;
 	}
 
 	function themifyParseJSON(data, device) {
@@ -96,13 +95,15 @@
 
 	var apiResponsiveControl = {
 		init: function() {
-			$(document).on('themify-responsive-preview-background', this.controlBackground)
-			.on('themify-responsive-preview-color-control', this.controlColor)
-			.on('themify-responsive-preview-fonts-control', this.controlFonts)
-			.on('themify-responsive-preview-border-control', this.controlBorder)
-			.on('themify-responsive-preview-margin-control', this.controlMargin)
-			.on('themify-responsive-preview-padding-control', this.controlMargin) // use same control handler as margin
-			.on('themify-responsive-preview-logo-control', this.controlLogo)
+			$(document)
+				.on( 'themify-responsive-preview-background', this.controlBackground )
+				.on( 'themify-responsive-preview-color-control', this.controlColor )
+				.on( 'themify-responsive-preview-fonts-control', this.controlFonts )
+				.on( 'themify-responsive-preview-border-control', this.controlBorder )
+				.on( 'themify-responsive-preview-margin-control', this.controlMargin )
+				.on( 'themify-responsive-preview-padding-control', this.controlMargin ) // use same control handler as margin
+				.on( 'themify-responsive-preview-logo-control', this.controlLogo )
+				.on( 'themify-responsive-preview-width-control', this.controlWidth )
 		},
 
 		controlBackground: function( event, model, currentData ) {
@@ -171,6 +172,7 @@
 
 		controlBorder: function( event, model, currentData ) {
 			var values = themifyParseJSON( currentData, model.getCurrentDevice() );
+
 			apiResponsiveControl._hideComponentSameChange( $('.same', model.container), model, values );
 			apiResponsiveControl._borderColorChange( model, values );
 			apiResponsiveControl._dropdownBorderSameChange( $('.border-style', model.container), model, values );
@@ -187,9 +189,23 @@
 		},
 
 		controlLogo: function( event, model, currentData ) {
-			var values = themifyParseJSON( currentData, model.getCurrentDevice() );
+			var values = themifyParseJSON( currentData, model.getCurrentDevice() ),
+				defaultMode = themifyParseJSON( currentData, 'desktop' ).mode;
+
 			apiResponsiveControl._colorChange( model, values );
-			apiResponsiveControl._logoMode( model, values );
+			apiResponsiveControl._logoMode( model, values, defaultMode );
+		},
+
+		controlWidth: function( event, model, currentData ) {
+			var values = themifyParseJSON( currentData, model.getCurrentDevice() ), context;
+
+			context = typeof model.params.label !== 'undefined'
+				? $( '[data-customize-setting-link="' + model.id.slice( 0, -5 ) + '"]', model.container ).parent()
+				: model.container;
+
+			apiResponsiveControl._dimensionChange( $('.dimension-width', context), model, values );
+			apiResponsiveControl._dropdownChange( $('.dimension-unit', context), values, 'unit' );
+			apiResponsiveControl._autoChange( $('.auto-prop', context), model, values );
 		},
 
 		_colorChange: function( model, values ) {
@@ -274,13 +290,15 @@
 
 		_dropdownChange: function( $selector, values, key ) {
 			var selected = values[ key ] && ! _.isEmpty( values[ key ] ) ? values[ key ] : '',
-				$element = $selector.find('option[value="'+ selected +'"]');
-			
+				$element = $selector.find('option[value="' + selected + '"]');
+
 			if ( $element.length ) {
-				$element.prop('selected', true);
+				$element.prop( 'selected', true );
 			} else {
-				$selector.find('option').prop('selected', false);
+				$selector.find('option').prop( 'selected', false );
 			}
+
+			$selector.trigger( 'change' );
 		},
 
 		_dropdownSameChange: function( $selector, values, key ) {
@@ -357,6 +375,21 @@
 			});
 		},
 
+		_dimensionChange: function( $selector, model, values ) {
+			$selector.each( function() {
+				var modelVal = model.value[model.id],
+					device = model.getCurrentDevice();
+
+				if ( model.isResponsiveStyling() ) {
+					_.isUndefined( modelVal[device] ) && ( modelVal[device] = {} );
+					modelVal[device].width = values.width;
+					model.setting.set( JSON.stringify( modelVal ) );
+				}
+
+				$( this ).val( values.width );
+			});
+		},
+
 		_dimensionSameChange: function( $selector, model, values ) {
 			var $same = $('.same', model.container);
 			$selector.each(function(){
@@ -373,6 +406,15 @@
 				}
 
 				$(this).val( values[side].width );
+			});
+		},
+
+		_autoChange: function( $selectors, model, values ) {
+			$selectors.each(function(){
+				var hide = $(this).data( 'hide' );
+
+				$( this ).prop( 'checked', 'auto' === values.auto );
+				$( '.' + hide, model.container ).toggleClass( 'hide-horizontally', 'auto' === values.auto );
 			});
 		},
 
@@ -393,34 +435,35 @@
 			});
 		},
 
-		_logoMode: function( model, values ) {
+		_logoMode: function( model, values, mode ) {
 			var $logoMode = $('.logo-modes .logo-mode', model.container),
 				val = values.mode || '',
 				$logoTab = $logoMode.closest( '.customize-control' ),
-				deskValue = 'text';
+				deskValue = mode;
 
 			if ( model.isResponsiveStyling() ) {
-				$logoMode.filter( '[value="image"]' ).parent().hide();
-				$logoMode = $logoMode.filter( ':not([value="image"])' );
+				$('.remove-image, .open-media', model.container).hide();
 				deskValue = $logoTab.data( 'deskValue' ) || deskValue;
-				
-				if( deskValue === 'image' ) {
-					$logoTab.hide();
-					$logoMode.filter( '[value="text"]' ).prop( 'checked', true );
-
-				}
 			} else {
-				$logoMode.filter( '[value="image"]' ).parent().show();
-				$logoTab.is( ':hidden' ) && $logoTab.show();
+				$('.remove-image, .open-media', model.container).show();
+				deskValue = val;
 				$logoTab.data( 'deskValue', val );
+			}
+
+			if (deskValue == 'image') {
+				var width = values.imgwidth || '',
+					height = values.imgheight || '';
+				$logoTab.find('.img-width').val(width);
+				$logoTab.find('.img-height').val(height);
 			}
 
 			$logoMode.each( function() {
 				var $el = $( this ),
-					isActive = $el.val() == val;
+					isActive = $el.val() == deskValue;
 				$el.prop( 'checked', isActive );
 				isActive && $el.trigger( 'click' );
 			} );
+			
 		}
 	};
 
@@ -605,8 +648,8 @@
 		if (controls) {
 			$.each(controls, function (index, selector) {
 				var model = parent_api.control.instance( index + '_ctrl');
+
 				if ( ! _.isEmpty( model.setting.get() ) ) {
-					
 					var currentData = model.setting.get();
 					$.event.trigger( key, [ model, currentData ]);
 				}
@@ -631,15 +674,16 @@
 
 	});
 
-	parent_api.previewedDevice.bind('change', function(device){ 
+	parent_api.previewedDevice.bind( 'change', function( device ) {
 		responsive_trigger_event( themifyCustomizer.backgroundControls, 'themify-responsive-preview-background' );
 		responsive_trigger_event( themifyCustomizer.colorControls, 'themify-responsive-preview-color-control' );
 		responsive_trigger_event( themifyCustomizer.fontControls, 'themify-responsive-preview-fonts-control' );
-		responsive_trigger_event( themifyCustomizer.borderControls, 'themify-responsive-preview-border-control');
-		responsive_trigger_event( themifyCustomizer.marginControls, 'themify-responsive-preview-margin-control');
-		responsive_trigger_event( themifyCustomizer.paddingControls, 'themify-responsive-preview-padding-control');
-		responsive_trigger_event( themifyCustomizer.logoControls, 'themify-responsive-preview-logo-control');
-	});
+		responsive_trigger_event( themifyCustomizer.borderControls, 'themify-responsive-preview-border-control' );
+		responsive_trigger_event( themifyCustomizer.marginControls, 'themify-responsive-preview-margin-control' );
+		responsive_trigger_event( themifyCustomizer.paddingControls, 'themify-responsive-preview-padding-control' );
+		responsive_trigger_event( themifyCustomizer.logoControls, 'themify-responsive-preview-logo-control' );
+		responsive_trigger_event( themifyCustomizer.widthControls, 'themify-responsive-preview-width-control' );
+	} );
 	
 	// Remove stylesheets when clearAll
 	$( window ).on( 'message', function( event ) {
@@ -786,12 +830,13 @@
 						styles[$id]['display'] = 'block';
 
 						var $img = $('img', $selector);
-						if ($img.length > 0) {
-							$img.remove();
-						}
+
 						if (values.mode && 'image' === values.mode) {
 							$selector.find('span').hide();
 							if ('undefined' !== typeof values.src && values.src) {
+								if ($img.length > 0) {
+									$img.remove();
+								}
 								if ($('a', $selector).length > 0) {
 									$selector.find('a').prepend('<img src="' + values.src + '" />');
 									if (values.link) {
@@ -800,13 +845,13 @@
 								} else {
 									$selector.prepend('<img src="' + values.src + '" />');
 								}
-								var imgwidth = values.imgwidth ? values.imgwidth : '',
-										imgheight = values.imgheight ? values.imgheight : '';
-								$selector.find('img').css({
-									'width': imgwidth,
-									'height': imgheight
-								});
 							}
+							var imgwidth = values.imgwidth ? values.imgwidth : '',
+								imgheight = values.imgheight ? values.imgheight : '';
+							$selector.find('img').css({
+								'width': imgwidth,
+								'height': imgheight
+							});
 						} else {
 							$selector.find('span').show();
 							if ($('a', $selector).length > 0) {
@@ -1148,12 +1193,13 @@
 		$.each(themifyCustomizer.widthControls, function (index, selector) {
 			api(index, function (value) {
 				value.bind(function (widthData) {
-					var values = $.parseJSON(widthData),
-							$id = getStyleId(selector);
+					var values = themifyParseJSON( widthData ),
+						$id = getStyleId(selector);
+
 					if (!styles[$id]) {
 						styles[$id] = [];
 					}
-					styles[$id]['height'] = getDimension(values);
+					styles[$id]['width'] = getDimension(values);
 					$.event.trigger("themify.customizer", [$id, selector]);
 				});
 			});

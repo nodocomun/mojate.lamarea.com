@@ -18,6 +18,7 @@ $fields_default = array(
     'offset_' . $mod_name => '',
     'order_' . $mod_name => 'desc',
     'orderby_' . $mod_name => 'date',
+    'meta_key_' . $mod_name => '',
     'display_' . $mod_name => 'content',
     'hide_feat_img_' . $mod_name => 'no',
     'image_size_' . $mod_name => '',
@@ -61,6 +62,7 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
     ?>
     <!-- module post -->
     <div <?php echo self::get_element_attributes($container_props); ?>>
+        <!--insert-->
         <?php
         if ($fields_args['mod_title_' . $mod_name] !== '') {
             echo $fields_args['before_title'] . apply_filters('themify_builder_module_title', $fields_args['mod_title_' . $mod_name], $fields_args) . $fields_args['after_title'];
@@ -69,25 +71,10 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
         do_action('themify_builder_before_template_content_render');
         $order = $fields_args['order_' . $mod_name];
         $orderby = $fields_args['orderby_' . $mod_name];
+        $meta_key = $fields_args['meta_key_' . $mod_name];
         $limit = $fields_args['post_per_page_' . $mod_name];
         $mod_name_query = $fields_args['type_query_' . $mod_name];
         $offset = $fields_args['offset_' . $mod_name];
-        $terms = $mod_name === 'post' && isset($fields_args["{$mod_name_query}_post"]) ? $fields_args["{$mod_name_query}_post"] : $fields_args['category_' . $mod_name];
-        // deal with how category fields are saved
-        $terms = preg_replace('/\|[multiple|single]*$/', '', $terms);
-        $temp_terms = explode(',', $terms);
-        $new_terms = $new_exclude_terms = array();
-        $is_string = false;
-        foreach ($temp_terms as $t) {
-            if (!is_numeric($t)) {
-                $is_string = true;
-            }
-            if ('' !== $t) {
-                $result_array = ( ( is_numeric($t) && 0 <= $t ) || $is_string) ? 'new_terms' : 'new_exclude_terms';
-                array_push($$result_array, is_numeric($t) ? abs(trim($t)) : trim($t) );
-            }
-        }
-
         $args = array(
             'post_status' => 'publish',
             'posts_per_page' => $limit,
@@ -97,18 +84,42 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
             'paged' => $paged,
             'post_type' => $fields_args['post_type_' . $mod_name]
         );
-        if ('post_slug' === $mod_name_query && !empty($fields_args['query_slug_post'])) {
-            $args['post__in'] = Themify_Builder_Model::parse_slug_to_ids($fields_args['query_slug_post'], $args['post_type']);
+        
+
+        if ('post_slug' === $mod_name_query && !empty($fields_args['query_slug_' . $mod_name])) {
+            $args['post__in'] = Themify_Builder_Model::parse_slug_to_ids($fields_args['query_slug_' . $mod_name], $args['post_type']);
         } elseif ('post_slug' !== $mod_name_query) {
-            $tax_field = ( $is_string ) ? 'slug' : 'id';
-            if ($mod_name !== 'post') {
-                $mod_name_query = $mod_name . '-category';
+            
+            $terms = $mod_name === 'post' && isset($fields_args["{$mod_name_query}_post"]) ? $fields_args["{$mod_name_query}_post"] : $fields_args['category_' . $mod_name];
+            // deal with how category fields are saved
+            $terms = preg_replace('/\|[multiple|single]*$/', '', $terms);
+
+            $temp_terms = array_map( 'trim', explode( ',', $terms ) );
+            $new_terms = $new_exclude_terms = array();
+            $query_taxonomy = $mod_name !== 'post' ? $mod_name . '-category' : $mod_name_query;
+
+            foreach( $temp_terms as $t ) {
+                    if( ! is_numeric( $t )) {
+                        if($term = term_exists( preg_replace( '/^-/', '', trim( $t ) ), $query_taxonomy ) ){
+                            $t = ( $t[0] === '-' ? -1 : 1 ) * abs( is_array( $term ) ? $term['term_id'] : $term );
+                        }
+                    }
+                    if(is_numeric($t)) {
+                        if(0 <= $t){
+                            $new_terms[] =  abs( $t );
+                        }
+                        else{
+                            $new_exclude_terms[] = abs( $t );
+                        }
+                    }
             }
+            unset($temp_terms,$terms);
+            $mod_name_query = $query_taxonomy;
             if (!empty($new_terms) && !in_array('0', $new_terms)) {
                 $args['tax_query'] = array(
                     array(
                         'taxonomy' => $mod_name_query,
-                        'field' => $tax_field,
+                        'field' => 'id',
                         'terms' => $new_terms
                     ),
                 );
@@ -116,15 +127,17 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
             if (!empty($new_exclude_terms)) {
                 $args['tax_query'][] = array(
                     'taxonomy' => $mod_name_query,
-                    'field' => $tax_field,
+                    'field' => 'id',
                     'terms' => $new_exclude_terms,
                     'operator' => "NOT IN"
                 );
-            }
+            } 
+            unset($new_terms,$new_exclude_terms);
         }
 
-
-
+        if( ! empty( $meta_key ) && in_array( $orderby, array( 'meta_value', 'meta_value_num' ),true ) ) {
+                $args[ 'meta_key' ] = $meta_key;
+        }
         // add offset posts
         if ($offset !== '') {
             if (empty($limit)) {
@@ -230,7 +243,7 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
                         <div class="post-content">
 
                             <?php if ($fields_args['hide_post_date_' . $mod_name] !== 'yes'): ?>
-                                <time datetime="<?php the_time('o-m-d') ?>" class="post-date" pubdate><?php the_date(apply_filters('themify_loop_date', '')) ?></time>
+                                <time datetime="<?php the_time('o-m-d') ?>" class="post-date" pubdate><?php echo get_the_date(apply_filters('themify_loop_date', '')) ?></time>
                             <?php endif; //post date   ?>
 
                             <?php if ($fields_args['hide_post_title_' . $mod_name] !== 'yes'): ?>
@@ -246,7 +259,17 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
                             <?php if ($fields_args['hide_post_meta_' . $mod_name] !== 'yes'): ?>
                                 <p class="post-meta"> 
                                     <span class="post-author"><?php the_author_posts_link() ?></span>
-                                    <span class="post-category"><?php $mod_name === 'post' ? get_the_category(', ') : get_the_terms($post->ID, $mod_name . '-category') ?></span>
+                                    <span class="post-category">
+									<?php if ( $mod_name === 'post' ) :
+											echo get_the_category_list(', ', '', $post->ID);
+										else :
+										$terms = wp_get_post_terms($post->ID, $mod_name . '-category', array( "fields" => "names" ));
+										if( !is_wp_error($terms) && !empty($terms) ) {
+											echo implode(', ', $terms);
+										}
+										endif;
+									?>
+									</span>
                                     <?php the_tags(' <span class="post-tag">', ', ', '</span>'); ?>
                                     <?php if (!$is_comment_open && comments_open()) : ?>
                                         <span class="post-comment"><?php comments_popup_link(__('0 Comments', 'themify'), __('1 Comment', 'themify'), __('% Comments', 'themify')); ?></span>
@@ -263,7 +286,7 @@ if ($fields_args['orderby_' . $mod_name] === 'rand' || TFCache::start_cache($mod
                             } elseif ($fields_args['display_' . $mod_name] !== 'none') {
                                 the_content(themify_builder_get('setting-default_more_text') ? themify_builder_get('setting-default_more_text') : __('More &rarr;', 'themify'));
                             }
-                            edit_post_link(__('Edit', 'themify'), '[', ']');
+                            edit_post_link(__('Edit', 'themify'), '<span class="edit-button">[', ']</span>');
                             ?>
                             <?php if ($mod_name === 'testimonial'): ?>
                                 <p class="testimonial-author">

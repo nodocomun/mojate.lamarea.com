@@ -36,7 +36,7 @@
 				<?php endif; ?>
 
 				<?php if ( themify_theme_do_not_exclude_all( 'mobile-menu' ) ) : ?>
-					<a id="menu-icon" href="#mobile-menu"></a>
+					<a id="menu-icon" href="#mobile-menu"><span class="menu-icon-inner"></span></a>
 					<div id="mobile-menu" class="sidemenu sidemenu-off">
 
 						<?php if ( themify_theme_show_area( 'search_form' ) ) : ?>

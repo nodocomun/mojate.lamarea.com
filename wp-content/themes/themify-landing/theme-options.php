@@ -117,6 +117,7 @@ class Themify {
 	// Sorting Parameters
 	public $order = 'DESC';
 	public $orderby = 'date';
+	public $order_meta_key = false;
 
 	function __construct() {
 
@@ -152,6 +153,10 @@ class Themify {
 		// Set Order & Order By parameters for post sorting
 		$this->order = themify_check( 'setting-index_order' ) ? themify_get( 'setting-index_order' ) : 'DESC';
 		$this->orderby = themify_check( 'setting-index_orderby' ) ? themify_get( 'setting-index_orderby' ) : 'date';
+
+		if( in_array( $this->orderby, array( 'meta_value', 'meta_value_num' ) ) ) {
+			$this->order_meta_key = themify_get( 'setting-index_meta_key', '' );
+		}
 
 		$this->display_content = themify_get( 'setting-default_layout_display' );
 		$this->excerpt_length = themify_get( 'setting-default_excerpt_length' );
@@ -330,6 +335,11 @@ class Themify {
 				$this->posts_per_page = themify_get( $this->query_post_type . '_posts_per_page' );
 				$this->order = themify_get( $this->query_post_type . '_order' );
 				$this->orderby = themify_get( $this->query_post_type . '_orderby' );
+
+				if( in_array( $this->orderby, array( 'meta_value', 'meta_value_num' ) ) ) {
+					$this->order_meta_key = themify_get( $this->query_post_type . '_meta_key', '' );
+				}
+
 				$this->use_original_dimensions = 'no';
 
 				if ( '' != $portfolio_query_category ) {
@@ -383,6 +393,9 @@ class Themify {
 				$this->order = ( themify_get( 'order' ) && '' != themify_get( 'order' ) ) ? themify_get( 'order' ) : ( themify_check( 'setting-index_order' ) ? themify_get( 'setting-index_order' ) : 'DESC' );
 				$this->orderby = ( themify_get( 'orderby' ) && '' != themify_get( 'orderby' ) ) ? themify_get( 'orderby' ) : ( themify_check( 'setting-index_orderby' ) ? themify_get( 'setting-index_orderby' ) : 'date' );
 
+				if( in_array( $this->orderby, array( 'meta_value', 'meta_value_num' ) ) ) {
+					$this->order_meta_key = themify_get( 'meta_key', '' );
+				}
 			}
 		}
 
@@ -488,6 +501,17 @@ class Themify {
 			$this->width = $post_image_width>=0?$post_image_width:$default_width;
                         $this->height = $post_image_height>=0?$post_image_height:$default_height;
 
+		}
+		elseif ( is_archive() ) {
+
+			$excluded_types = apply_filters( 'themify_exclude_CPT_for_sidebar', array('post', 'page', 'attachment', 'tbuilder_layout', 'tbuilder_layout_part', 'section'));;
+			$postType = get_post_type();
+			
+			if ( !in_array($postType, $excluded_types) ) {
+				if ( themify_check( 'setting-custom_post_'. $postType .'_archive' ) ) {
+					$this->layout = themify_get( 'setting-custom_post_'. $postType .'_archive' );
+				}
+			}
 		}
 
 		if ( is_single() && $this->hide_image != 'yes' ) {

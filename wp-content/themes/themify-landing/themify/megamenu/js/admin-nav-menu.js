@@ -53,9 +53,15 @@ jQuery(function($){
 
 			/* init the widgets */
 			if( ! el.hasClass( 'initialized' ) ) {
-				$( document ).trigger( 'widget-added', [ item.find( '.themify-widget-options' ) ] );
+				$( document ).trigger( 'widget-added', [ item.find( '.themify-widget-options' ).addClass( 'open' ) ] );
 				el.addClass( 'initialized' );
 			}
 		}
-	});
+	})
+	.on( 'click', '.tf-mega-columns-layout a', function(e) {
+		e.preventDefault();
+		var $this = $( this );
+		$this.parent().find( '.val' ).val( $this.attr( 'data-value' ) );
+		$this.addClass( 'selected' ).siblings().removeClass( 'selected' );
+	} );
 });

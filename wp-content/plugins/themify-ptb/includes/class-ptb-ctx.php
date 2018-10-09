@@ -5,7 +5,7 @@
  *
  * This class helps to create custom taxonomy arguments
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -80,19 +80,19 @@ class PTB_Custom_Taxonomy {
     public $plural_label;
     public $attach_to;
     public $is_hierarchical;
-    public $cl_search_items;
-    public $cl_popular_items;
-    public $cl_all_items;
-    public $cl_parent_item;
-    public $cl_parent_item_colon;
-    public $cl_edit_item;
-    public $cl_update_item;
-    public $cl_add_new_item;
-    public $cl_new_item_name;
-    public $cl_separate_items_with_commas;
-    public $cl_add_or_remove_items;
-    public $cl_choose_from_most_used;
-    public $cl_menu_name;
+    public $search_items;
+    public $popular_items;
+    public $all_items;
+    public $parent_item;
+    public $parent_item_colon;
+    public $edit_item;
+    public $update_item;
+    public $add_new_item;
+    public $new_item_name;
+    public $separate_items_with_commas;
+    public $add_or_remove_items;
+    public $choose_from_most_used;
+    public $menu_name;
     public $ad_publicly_queryable;
     public $ad_show_ui;
     public $ad_show_tag_cloud;
@@ -130,19 +130,19 @@ class PTB_Custom_Taxonomy {
         $this->is_hierarchical = true;
 
         // Set custom labels default values
-        $this->cl_search_items = array();
-        $this->cl_popular_items = array();
-        $this->cl_all_items = array();
-        $this->cl_parent_item = array();
-        $this->cl_parent_item_colon = array();
-        $this->cl_edit_item = array();
-        $this->cl_update_item = array();
-        $this->cl_add_new_item = array();
-        $this->cl_new_item_name = array();
-        $this->cl_separate_items_with_commas = array();
-        $this->cl_add_or_remove_items = array();
-        $this->cl_choose_from_most_used = array();
-        $this->cl_menu_name = array();
+        $this->search_items = array();
+        $this->popular_items = array();
+        $this->all_items = array();
+        $this->parent_item = array();
+        $this->parent_item_colon = array();
+        $this->edit_item = array();
+        $this->update_item = array();
+        $this->add_new_item = array();
+        $this->new_item_name = array();
+        $this->separate_items_with_commas = array();
+        $this->add_or_remove_items = array();
+        $this->choose_from_most_used = array();
+        $this->menu_name = array();
 
 
         // Set advanced options default values;
@@ -164,19 +164,19 @@ class PTB_Custom_Taxonomy {
 
         $singular_label = PTB_Utils::get_label($this->singular_label);
         $plural_label = PTB_Utils::get_label($this->plural_label);
-        $search_items = PTB_Utils::get_label($this->cl_search_items);
-        $popular_items = PTB_Utils::get_label($this->cl_popular_items);
-        $all_items = PTB_Utils::get_label($this->cl_all_items);
-        $parent_item = PTB_Utils::get_label($this->cl_parent_item);
-        $parent_item_colon = PTB_Utils::get_label($this->cl_parent_item_colon);
-        $edit_item = PTB_Utils::get_label($this->cl_edit_item);
-        $update_item = PTB_Utils::get_label($this->cl_update_item);
-        $add_new_item = PTB_Utils::get_label($this->cl_add_new_item);
-        $new_item_name = PTB_Utils::get_label($this->cl_new_item_name);
-        $separate_ = PTB_Utils::get_label($this->cl_separate_items_with_commas);
-        $add_or_remove_items = PTB_Utils::get_label($this->cl_add_or_remove_items);
-        $most_used = PTB_Utils::get_label($this->cl_choose_from_most_used);
-        $menu_name = PTB_Utils::get_label($this->cl_menu_name);
+        $search_items = PTB_Utils::get_label($this->search_items);
+        $popular_items = PTB_Utils::get_label($this->popular_items);
+        $all_items = PTB_Utils::get_label($this->all_items);
+        $parent_item = PTB_Utils::get_label($this->parent_item);
+        $parent_item_colon = PTB_Utils::get_label($this->parent_item_colon);
+        $edit_item = PTB_Utils::get_label($this->edit_item);
+        $update_item = PTB_Utils::get_label($this->update_item);
+        $add_new_item = PTB_Utils::get_label($this->add_new_item);
+        $new_item_name = PTB_Utils::get_label($this->new_item_name);
+        $separate_ = PTB_Utils::get_label($this->separate_items_with_commas);
+        $add_or_remove_items = PTB_Utils::get_label($this->add_or_remove_items);
+        $most_used = PTB_Utils::get_label($this->choose_from_most_used);
+        $menu_name = PTB_Utils::get_label($this->menu_name);
         $low_plural_label = strtolower($plural_label);
 
         $labels = array(
@@ -230,19 +230,19 @@ class PTB_Custom_Taxonomy {
             self::ATTACH_TO => array_values($this->attach_to),
             self::IS_HIERARCHICAL => $this->is_hierarchical,
             // Custom Labels
-            self::CL_SEARCH_ITEMS => $this->cl_search_items,
-            self::CL_POPULAR_ITEMS => $this->cl_popular_items,
-            self::CL_ALL_ITEMS => $this->cl_all_items,
-            self::CL_PARENT_ITEM => $this->cl_parent_item,
-            self::CL_PARENT_ITEM_COLON => $this->cl_parent_item_colon,
-            self::CL_EDIT_ITEM => $this->cl_edit_item,
-            self::CL_UPDATE_ITEM => $this->cl_update_item,
-            self::CL_ADD_NEW_ITEM => $this->cl_add_new_item,
-            self::CL_NEW_ITEM_NAME => $this->cl_new_item_name,
-            self::CL_SEPARATE_ITEMS_WITH_COMMAS => $this->cl_separate_items_with_commas,
-            self::CL_ADD_OR_REMOVE_ITEMS => $this->cl_add_or_remove_items,
-            self::CL_CHOOSE_FROM_MOST_USED => $this->cl_choose_from_most_used,
-            self::CL_MENU_NAME => $this->cl_menu_name,
+            self::CL_SEARCH_ITEMS => $this->search_items,
+            self::CL_POPULAR_ITEMS => $this->popular_items,
+            self::CL_ALL_ITEMS => $this->all_items,
+            self::CL_PARENT_ITEM => $this->parent_item,
+            self::CL_PARENT_ITEM_COLON => $this->parent_item_colon,
+            self::CL_EDIT_ITEM => $this->edit_item,
+            self::CL_UPDATE_ITEM => $this->update_item,
+            self::CL_ADD_NEW_ITEM => $this->add_new_item,
+            self::CL_NEW_ITEM_NAME => $this->new_item_name,
+            self::CL_SEPARATE_ITEMS_WITH_COMMAS => $this->separate_items_with_commas,
+            self::CL_ADD_OR_REMOVE_ITEMS => $this->add_or_remove_items,
+            self::CL_CHOOSE_FROM_MOST_USED => $this->choose_from_most_used,
+            self::CL_MENU_NAME => $this->menu_name,
             // Advanced options
             self::AD_PUBLICLY_QUERYABLE => $this->ad_publicly_queryable,
             self::AD_SHOW_UI => $this->ad_show_ui,
@@ -293,55 +293,55 @@ class PTB_Custom_Taxonomy {
         // Custom Labels
 
         if (isset($source[self::CL_SEARCH_ITEMS])) {
-            $this->cl_search_items = $source[self::CL_SEARCH_ITEMS];
+            $this->search_items = $source[self::CL_SEARCH_ITEMS];
         }
 
         if (isset($source[self::CL_POPULAR_ITEMS])) {
-            $this->cl_popular_items = $source[self::CL_POPULAR_ITEMS];
+            $this->popular_items = $source[self::CL_POPULAR_ITEMS];
         }
 
         if (isset($source[self::CL_ALL_ITEMS])) {
-            $this->cl_all_items = $source[self::CL_ALL_ITEMS];
+            $this->all_items = $source[self::CL_ALL_ITEMS];
         }
 
         if (isset($source[self::CL_PARENT_ITEM])) {
-            $this->cl_parent_item = $source[self::CL_PARENT_ITEM];
+            $this->parent_item = $source[self::CL_PARENT_ITEM];
         }
 
         if (isset($source[self::CL_PARENT_ITEM_COLON])) {
-            $this->cl_parent_item_colon = $source[self::CL_PARENT_ITEM_COLON];
+            $this->parent_item_colon = $source[self::CL_PARENT_ITEM_COLON];
         }
 
         if (isset($source[self::CL_EDIT_ITEM])) {
-            $this->cl_edit_item = $source[self::CL_EDIT_ITEM];
+            $this->edit_item = $source[self::CL_EDIT_ITEM];
         }
 
         if (isset($source[self::CL_UPDATE_ITEM])) {
-            $this->cl_update_item = $source[self::CL_UPDATE_ITEM];
+            $this->update_item = $source[self::CL_UPDATE_ITEM];
         }
 
         if (isset($source[self::CL_ADD_NEW_ITEM])) {
-            $this->cl_add_new_item = $source[self::CL_ADD_NEW_ITEM];
+            $this->add_new_item = $source[self::CL_ADD_NEW_ITEM];
         }
 
         if (isset($source[self::CL_NEW_ITEM_NAME])) {
-            $this->cl_new_item_name = $source[self::CL_NEW_ITEM_NAME];
+            $this->new_item_name = $source[self::CL_NEW_ITEM_NAME];
         }
 
         if (isset($source[self::CL_SEPARATE_ITEMS_WITH_COMMAS])) {
-            $this->cl_separate_items_with_commas = $source[self::CL_SEPARATE_ITEMS_WITH_COMMAS];
+            $this->separate_items_with_commas = $source[self::CL_SEPARATE_ITEMS_WITH_COMMAS];
         }
 
         if (isset($source[self::CL_ADD_OR_REMOVE_ITEMS])) {
-            $this->cl_add_or_remove_items = $source[self::CL_ADD_OR_REMOVE_ITEMS];
+            $this->add_or_remove_items = $source[self::CL_ADD_OR_REMOVE_ITEMS];
         }
 
         if (isset($source[self::CL_CHOOSE_FROM_MOST_USED])) {
-            $this->cl_choose_from_most_used = $source[self::CL_CHOOSE_FROM_MOST_USED];
+            $this->choose_from_most_used = $source[self::CL_CHOOSE_FROM_MOST_USED];
         }
 
         if (isset($source[self::CL_MENU_NAME])) {
-            $this->cl_menu_name = $source[self::CL_MENU_NAME];
+            $this->menu_name = $source[self::CL_MENU_NAME];
         }
 
         // Advanced options
@@ -377,7 +377,7 @@ class PTB_Custom_Taxonomy {
      */
     public function is_attached_to_post_type($post_type) {
 
-        return in_array($post_type, $this->attach_to);
+        return in_array($post_type, $this->attach_to,true);
     }
 
     /**

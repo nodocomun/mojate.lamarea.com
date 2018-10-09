@@ -5,7 +5,7 @@
  *
  * This class helps to create custom post type arguments
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -109,17 +109,17 @@ class PTB_Custom_Post_Type {
     public $taxonomies;
     public $meta_boxes;
     // Custom Labels
-    public $cl_add_new;
-    public $cl_add_new_item;
-    public $cl_edit_item;
-    public $cl_new_item;
-    public $cl_all_items;
-    public $cl_view_item;
-    public $cl_search_items;
-    public $cl_not_found;
-    public $cl_not_found_in_trash;
-    public $cl_parent_item_colon;
-    public $cl_menu_name;
+    public $add_new;
+    public $add_new_item;
+    public $edit_item;
+    public $new_item;
+    public $all_items;
+    public $view_item;
+    public $search_items;
+    public $not_found;
+    public $not_found_in_trash;
+    public $parent_item_colon;
+    public $menu_name;
     // Advanced options
     public $ad_publicly_queryable;
     public $ad_exclude_from_search;
@@ -172,17 +172,17 @@ class PTB_Custom_Post_Type {
         $this->meta_boxes = array();
 
         // Set custom labels default values
-        $this->cl_add_new = array();
-        $this->cl_add_new_item = array();
-        $this->cl_edit_item = array();
-        $this->cl_new_item = array();
-        $this->cl_all_items = array();
-        $this->cl_view_item = array();
-        $this->cl_search_items = array();
-        $this->cl_not_found = array();
-        $this->cl_not_found_in_trash = array();
-        $this->cl_parent_item_colon = array();
-        $this->cl_menu_name = array();
+        $this->add_new = array();
+        $this->add_new_item = array();
+        $this->edit_item = array();
+        $this->new_item = array();
+        $this->all_items = array();
+        $this->view_item = array();
+        $this->search_items = array();
+        $this->not_found = array();
+        $this->not_found_in_trash = array();
+        $this->parent_item_colon = array();
+        $this->menu_name = array();
 
         // Set advanced options default values;
         $this->ad_publicly_queryable = true;
@@ -209,17 +209,17 @@ class PTB_Custom_Post_Type {
 
         $singular_label = PTB_Utils::get_label($this->singular_label);
         $plural_label = PTB_Utils::get_label($this->plural_label);
-        $search_items = PTB_Utils::get_label($this->cl_search_items);
-        $all_items = PTB_Utils::get_label($this->cl_all_items);
-        $parent_item_colon = PTB_Utils::get_label($this->cl_parent_item_colon);
-        $edit_item = PTB_Utils::get_label($this->cl_edit_item);
-        $new_item = PTB_Utils::get_label($this->cl_new_item);
-        $add_new_item = PTB_Utils::get_label($this->cl_add_new_item);
-        $add_new = PTB_Utils::get_label($this->cl_add_new);
-        $not_found = PTB_Utils::get_label($this->cl_not_found);
-        $not_found_in_trash = PTB_Utils::get_label($this->cl_not_found_in_trash);
-        $view_item = PTB_Utils::get_label($this->cl_view_item);
-        $menu_name = PTB_Utils::get_label($this->cl_menu_name);
+        $search_items = PTB_Utils::get_label($this->search_items);
+        $all_items = PTB_Utils::get_label($this->all_items);
+        $parent_item_colon = PTB_Utils::get_label($this->parent_item_colon);
+        $edit_item = PTB_Utils::get_label($this->edit_item);
+        $new_item = PTB_Utils::get_label($this->new_item);
+        $add_new_item = PTB_Utils::get_label($this->add_new_item);
+        $add_new = PTB_Utils::get_label($this->add_new);
+        $not_found = PTB_Utils::get_label($this->not_found);
+        $not_found_in_trash = PTB_Utils::get_label($this->not_found_in_trash);
+        $view_item = PTB_Utils::get_label($this->view_item);
+        $menu_name = PTB_Utils::get_label($this->menu_name);
 
         $labels = array(
             'name' => $plural_label,
@@ -283,17 +283,17 @@ class PTB_Custom_Post_Type {
             self::TAXONOMIES => array_values($this->taxonomies),
             self::META_BOXES => $this->meta_boxes,
             // Custom labels
-            self::CL_ADD_NEW => $this->cl_add_new,
-            self::CL_ADD_NEW_ITEM => $this->cl_add_new_item,
-            self::CL_EDIT_ITEM => $this->cl_edit_item,
-            self::CL_NEW_ITEM => $this->cl_new_item,
-            self::CL_ALL_ITEMS => $this->cl_all_items,
-            self::CL_VIEW_ITEM => $this->cl_view_item,
-            self::CL_SEARCH_ITEMS => $this->cl_search_items,
-            self::CL_NOT_FOUND => $this->cl_not_found,
-            self::CL_NOT_FOUND_IN_TRASH => $this->cl_not_found_in_trash,
-            self::CL_PARENT_ITEM_COLON => $this->cl_parent_item_colon,
-            self::CL_MENU_NAME => $this->cl_menu_name,
+            self::CL_ADD_NEW => $this->add_new,
+            self::CL_ADD_NEW_ITEM => $this->add_new_item,
+            self::CL_EDIT_ITEM => $this->edit_item,
+            self::CL_NEW_ITEM => $this->new_item,
+            self::CL_ALL_ITEMS => $this->all_items,
+            self::CL_VIEW_ITEM => $this->view_item,
+            self::CL_SEARCH_ITEMS => $this->search_items,
+            self::CL_NOT_FOUND => $this->not_found,
+            self::CL_NOT_FOUND_IN_TRASH => $this->not_found_in_trash,
+            self::CL_PARENT_ITEM_COLON => $this->parent_item_colon,
+            self::CL_MENU_NAME => $this->menu_name,
             // Advanced options
             self::AD_PUBLICLY_QUERYABLE => $this->ad_publicly_queryable,
             self::AD_EXCLUDE_FROM_SEARCH => $this->ad_exclude_from_search,
@@ -368,47 +368,47 @@ class PTB_Custom_Post_Type {
         // Custom labels
 
         if (isset($source[self::CL_ADD_NEW])) {
-            $this->cl_add_new = $source[self::CL_ADD_NEW];
+            $this->add_new = $source[self::CL_ADD_NEW];
         }
 
         if (isset($source[self::CL_ADD_NEW_ITEM])) {
-            $this->cl_add_new_item = $source[self::CL_ADD_NEW_ITEM];
+            $this->add_new_item = $source[self::CL_ADD_NEW_ITEM];
         }
 
         if (isset($source[self::CL_EDIT_ITEM])) {
-            $this->cl_edit_item = $source[self::CL_EDIT_ITEM];
+            $this->edit_item = $source[self::CL_EDIT_ITEM];
         }
 
         if (isset($source[self::CL_NEW_ITEM])) {
-            $this->cl_new_item = $source[self::CL_NEW_ITEM];
+            $this->new_item = $source[self::CL_NEW_ITEM];
         }
 
         if (isset($source[self::CL_ALL_ITEMS])) {
-            $this->cl_all_items = $source[self::CL_ALL_ITEMS];
+            $this->all_items = $source[self::CL_ALL_ITEMS];
         }
 
         if (isset($source[self::CL_VIEW_ITEM])) {
-            $this->cl_view_item = $source[self::CL_VIEW_ITEM];
+            $this->view_item = $source[self::CL_VIEW_ITEM];
         }
 
         if (isset($source[self::CL_SEARCH_ITEMS])) {
-            $this->cl_search_items = $source[self::CL_SEARCH_ITEMS];
+            $this->search_items = $source[self::CL_SEARCH_ITEMS];
         }
 
         if (isset($source[self::CL_NOT_FOUND])) {
-            $this->cl_not_found = $source[self::CL_NOT_FOUND];
+            $this->not_found = $source[self::CL_NOT_FOUND];
         }
 
         if (isset($source[self::CL_NOT_FOUND_IN_TRASH])) {
-            $this->cl_not_found_in_trash = $source[self::CL_NOT_FOUND_IN_TRASH];
+            $this->not_found_in_trash = $source[self::CL_NOT_FOUND_IN_TRASH];
         }
 
         if (isset($source[self::CL_PARENT_ITEM_COLON])) {
-            $this->cl_parent_item_colon = $source[self::CL_PARENT_ITEM_COLON];
+            $this->parent_item_colon = $source[self::CL_PARENT_ITEM_COLON];
         }
 
         if (isset($source[self::CL_MENU_NAME])) {
-            $this->cl_menu_name = $source[self::CL_MENU_NAME];
+            $this->menu_name = $source[self::CL_MENU_NAME];
         }
 
         // Advanced options

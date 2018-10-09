@@ -3,7 +3,7 @@
 /**
  * Custom meta box class to create rating stars
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB

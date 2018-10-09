@@ -27,11 +27,11 @@ if (TFCache::start_cache($mod_name, self::$post_id, array('ID' => $module_ID))):
     $animation_effect = self::parse_animation_effect($fields_args['animation_effect'], $fields_args);
 
     $container_class = implode(' ', apply_filters('themify_builder_module_classes', array(
-        'module', 'module-' . $mod_name, $module_ID, $animation_effect
+        'module', 'module-' . $mod_name, $module_ID, $animation_effect, $fields_args['add_css_box']
                     ), $mod_name, $module_ID, $fields_args)
     );
     $inner_container_classes = implode(' ', apply_filters('themify_builder_module_inner_classes', array(
-        'module-' . $mod_name . '-content', 'ui', $fields_args['appearance_box'], $fields_args['color_box'], $fields_args['add_css_box'], $fields_args['background_repeat']
+        'module-' . $mod_name . '-content', 'ui', $fields_args['appearance_box'], $fields_args['color_box'], $fields_args['background_repeat']
             ))
     );
     $container_props = apply_filters('themify_builder_module_container_props', array(
@@ -41,11 +41,12 @@ if (TFCache::start_cache($mod_name, self::$post_id, array('ID' => $module_ID))):
     ?>
     <!-- module box -->
     <div <?php echo self::get_element_attributes($container_props); ?>>
+        <!--insert-->
         <?php if ($fields_args['mod_title_box'] !== ''): ?>
             <?php echo $fields_args['before_title'] . apply_filters('themify_builder_module_title', $fields_args['mod_title_box'], $fields_args). $fields_args['after_title']; ?>
         <?php endif; ?>
         <div class="<?php echo $inner_container_classes; ?>">
-            <?php echo apply_filters('themify_builder_module_content', $fields_args['content_box']); ?>
+                <?php echo apply_filters('themify_builder_module_content', $fields_args['content_box']); ?>
         </div>
     </div>
     <!-- /module box -->

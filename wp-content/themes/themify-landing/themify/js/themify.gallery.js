@@ -41,7 +41,8 @@ ThemifyGallery = {
 	},
 	
 	doLightbox: function(){
-		var context = this.config.context;
+		var context = this.config.context,
+			patterns = {};
 		
 		if(typeof $.fn.magnificPopup !== 'undefined' && typeof themifyScript.lightbox.lightboxOn !== 'undefined') {
 			
@@ -63,10 +64,31 @@ ThemifyGallery = {
 
 				if($is_video){
 					if( ThemifyGallery.isYoutube( $link ) ) {
-							// for youtube videos, sanitize the URL properly
+						var params = ThemifyGallery.getCustomParams( $link );
+
+						// YouTube URL pattern
+						if( params ) {
+							patterns.youtube = {
+								id: 'v=',
+								index: 'youtube.com/',
+								src: '//www.youtube.com/embed/%id%' + params
+							};
+						}
+
+						// YouTube sanitize the URL properly
 						$link = ThemifyGallery.getYoutubePath( $link );
-					}
-					else if( ThemifyGallery.isVimeo( $link ) ) {
+					} else if( ThemifyGallery.isVimeo( $link ) ) {
+						var params = ThemifyGallery.getCustomParams( $link );
+
+						// Vimeo URL pattern
+						if( params ) {
+							patterns.vimeo = {
+								id: '/',
+								index: 'vimeo.com/',
+								src: '//player.vimeo.com/video/%id%' + params
+							};
+						}
+
 						$link = $link.split('?')[0];
 					}
 				}
@@ -101,7 +123,8 @@ ThemifyGallery = {
 						'<div class="mfp-iframe-wrapper">'+
 						'<iframe class="mfp-iframe" '+ iOSScrolling +'noresize="noresize" frameborder="0" allowfullscreen></iframe>'+
 						'</div>'+
-						'</div>'
+						'</div>',
+						patterns: patterns
 					},
 					callbacks: {
 						open: function() {
@@ -214,7 +237,7 @@ ThemifyGallery = {
 			
 			// Images in WP Gallery
 			if(themifyScript.lightbox.lightboxGalleryOn){
-				$(context).on('click', ThemifyGallery.config.lightboxGallery, function(event){
+				$('body').on('click', ThemifyGallery.config.lightboxGallery, function(event){
 					if( 'image' !== ThemifyGallery.getFileType( $(this).prop( 'href' ) ) ) {
 						return;
 					}
@@ -314,12 +337,18 @@ ThemifyGallery = {
 		}
 		return link;
 	},
-	getParam: function(name, url){
-		name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-		var regexS = "[\\?&]"+name+"=([^&#]*)",
-                    regex = new RegExp(regexS),
-                    results = regex.exec(url);
-		return results==null ? "" : results[1];
+	getParam: function( name, url ) {
+		name = name.replace( /[\[]/, "\\\[" ).replace( /[\]]/, "\\\]" );
+		var regexS = "[\\?&]" + name + "=([^&#]*)",
+			regex = new RegExp( regexS ),
+			results = regex.exec( url );
+		return results == null ? "" : results[1];
+	},
+	getCustomParams: function( url ) {
+		var params = url.split( '?' )[1];
+		params = params ? '&' + params.replace( /[\\?&]?(v|autoplay)=[^&#]*/g, '' ).replace( /^&/g, '' ) : '';
+		
+		return '?autoplay=1' + params;
 	}
 };
 

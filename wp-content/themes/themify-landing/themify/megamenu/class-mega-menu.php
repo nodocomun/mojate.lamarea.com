@@ -46,6 +46,29 @@ if( ! class_exists('Themify_Mega_Menu_Walker') ) {
 			return $output;
 		}
 
+		/**
+		 * Render a Layout Part inside menu
+		 *
+		 * $dropdown_wrapper add ul.sub-menu around the widget
+		 * $class_names additional CSS classes to add to the menu wrapper
+		 * @return string
+		 */
+		function render_layout_part( $item, $dropdown_wrapper, $class_names = '' ) {
+			$output = '';
+			if( $dropdown_wrapper ) {
+				$title = apply_filters( 'the_title', $item->title, $item->ID );
+				$output .= "<li id='menu-item-$item->ID' $class_names><a href='#'>" . $title . '</a><ul class="sub-menu">';
+			}
+
+			$output .= '<li class="themify-widget-menu">' . do_shortcode( sprintf( '[themify_layout_part id="%s"]', $item->object_id ) ) . '';
+
+			if( $dropdown_wrapper ) {
+				$output .= '</ul>';
+			}
+
+			return $output;
+		}
+
 		function start_el( &$output, $item, $depth = 0, $args = array(), $current_object_id = 0 ) {
 
 			$classes = empty ( $item->classes ) ? array () : (array) $item->classes;
@@ -60,6 +83,12 @@ if( ! class_exists('Themify_Mega_Menu_Walker') ) {
 			/* handle the display of widget menu items */
 			if( Themify_Widgets_Menu::get_instance()->is_menu_widget( $item ) ) {
 				$output .= $this->render_widget_menu( $item, $depth == 0, $class_names );
+				return $output;
+			}
+
+			/* Layout Part rendering */
+			if ( $item->type == 'post_type' && $item->object == 'tbuilder_layout_part' ) {
+				$output .= $this->render_layout_part( $item, $depth == 0, $class_names );
 				return $output;
 			}
 
@@ -123,6 +152,9 @@ if( ! class_exists('Themify_Mega_Menu_Walker') ) {
 			if ( ! empty( $children_elements[ $item->$id_field ] ) ) {
 				$item->classes[] = 'has-sub-menu';
 			}
+			if ( themify_is_menu_highlighted_link($item->ID) ) {
+				$item->classes[] = 'highlight-link';
+			}
 			if( ( (
 					'taxonomy' == $item->type || 'custom' == $item->type || ( 'post_type' == $item->type && 'page' == $item->object )
 				) && themify_is_mega_menu_type( $item->ID, 'mega' ) )
@@ -179,8 +211,9 @@ if( ! function_exists('themify_theme_mega_get_posts') ) {
 		if ( is_wp_error( $taxObject ) || empty( $taxObject ) ) {
 			return '';
 		}
-		$mega_posts = '<article itemscope itemtype="http://schema.org/Article" class="post"><h1 class="post-title">'.__('Error loading posts.', 'themify').'</h1></article>';
+		$mega_posts = '<article itemscope itemtype="https://schema.org/Article" class="post"><h1 class="post-title">'.__('Error loading posts.', 'themify').'</h1></article>';
 
+		$postPerPage = themify_get( 'setting-mega_menu_posts', 5 );
 		$term_query_args = apply_filters( 'themify_mega_menu_query',
 			array(
 				'post_type' => $taxObject->object_type,
@@ -192,7 +225,7 @@ if( ! function_exists('themify_theme_mega_get_posts') ) {
 					)
 				),
 				'suppress_filters' => false,
-				'posts_per_page' => 5
+				'posts_per_page' => $postPerPage
 			)
 		);
 		
@@ -300,6 +333,11 @@ function themify_is_mega_menu_type( $item_id, $type = 'mega' ) {
 	return false;
 }
 
+function themify_is_menu_highlighted_link( $item_id ) {
+			$highlight = get_post_meta( $item_id, '_themify_highlight_link', false );
+	return $highlight;
+}
+
 /**
  * Add the option to enable mega menu to taxonomy menu types
  *
@@ -321,10 +359,7 @@ function themify_menu_mega_option( $item_id, $item, $depth, $args ) {
 	</p>
 
 	<?php
-	if ( $depth > 0 ) {
-		return;
-	}
-	if ( 'taxonomy' == $item->type || 'custom' == $item->type || ( 'post_type' == $item->type && 'page' == $item->object ) ) {
+	if (  $depth <= 0 && ('taxonomy' == $item->type || 'custom' == $item->type || ( 'post_type' == $item->type && 'page' == $item->object )) ) {
 		$is_mega = themify_is_mega_menu_type( $item_id, 'mega' );
 		$is_column = themify_is_mega_menu_type( $item_id, 'column' );
 		$column_layout = get_post_meta( $item_id, '_themify_mega_menu_columns_layout', true );
@@ -338,45 +373,39 @@ function themify_menu_mega_option( $item_id, $item, $depth, $args ) {
 					<option value="columns" <?php if( $is_column ) echo 'selected';?>><?php _e( 'Fullwidth Columns', 'themify' ); ?></option>
 				</select>
 			</label>
-			<div class="tf-mega-columns-layout themify_field-layout">
+			<div class="tf-mega-columns-layout">
 				<?php
-				echo '<p></p>'; // ignore this, this is to create some spacing
-				// the Column Layout field is generated with help from Themify Metabox plugin
-				themify_meta_field_layout( array(
-					'meta_box' => array(
-						'name' 		=> 'menu-item-tf-mega-columns-layout[' . $item_id . ']',
-						'type'		=> 'layout',
-						'show_title'=> true,
-						'meta'		=> themify_mega_menu_columns_layouts(),
-					),
-					'meta_value' => $column_layout
-				) );
+				echo '<input type="hidden" name="menu-item-tf-mega-columns-layout[' . $item_id . ']" value="" class="val">';
+				foreach ( array(
+					'' => __( 'Auto', 'themify' ),
+					'4-8' => __( '1/3 - 2/3', 'themify' ),
+					'8-4' => __( '2/3 - 1/3', 'themify' ),
+					'6-3-3' => __( '2/4 - 1/4 - 1/4', 'themify' ),
+					'3-3-6' => __( '1/4 - 1/4 - 2/4', 'themify' ),
+					'3-6-3' => __( '1/4 - 2/4 - 1/4', 'themify' ),
+					'3-9' => __( '1/4 - 3/4', 'themify' ),
+					'9-3' => __( '3/4 - 1/4', 'themify' ),
+				) as $key => $label ) {
+					$selected = $column_layout === $key ? 'class="selected"' : '';
+					echo '<a href="#" ' . $selected . ' data-value="'. $key . '" title="' . $label . '"></a>';
+				}
 				?>
 			</div>
 		</div>
-		<?php
-	}
+		<?php }
+			$allow_hightlight = apply_filters( 'themify_menu_highlight_link', false);
+			if ($allow_hightlight) :
+			$highlight = get_post_meta( $item_id, '_themify_highlight_link', true );
+		?>
+			<div class="field-tf-highlight description description-thin"><br>
+				<label for="edit-menu-item-tf-highlight-<?php echo esc_attr( $item_id ); ?>">
+					<input type="checkbox" name="menu-item-tf-highlight[<?php echo esc_attr( $item_id ); ?>]" value="1" <?php echo ($highlight ? 'checked="checked"' : ''); ?> id="edit-menu-item-tf-highlight-<?php echo esc_attr( $item_id ) ?>" class="edit-menu-item-tf-highlight themify_field_tf-highlight widefat"> 
+				<?php _e( 'Highlight this link', 'themify' ) ?><br />
+				</label>
+			</div>
+		<?php endif;
 }
 add_action( 'wp_nav_menu_item_custom_fields', 'themify_menu_mega_option', 12, 4 );
-
-/**
- * List of layouts can be applied to Columns mega menu items
- *
- * @return array
- */
-function themify_mega_menu_columns_layouts() {
-	$path = THEMIFY_URI . '/themify-builder/img/builder/';
-	return apply_filters( 'themify_mega_menu_columns_layouts', array(
-		array( 'value' => '', 'img' => $path . 'auto.png', 'title' => __( 'Auto', 'themify' ) ),
-		array( 'value' => '4-8', 'img' => $path . '1.3_2.3.png', 'title' => __( '1/3 - 2/3', 'themify' ) ),
-		array( 'value' => '8-4', 'img' => $path . '2.3_1.3.png', 'title' => __( '2/3 - 1/3', 'themify' ) ),
-		array( 'value' => '6-3-3', 'img' => $path . '2.4_1.4_1.4.png', 'title' => __( '2/4 - 1/4 - 1/4', 'themify' ) ),
-		array( 'value' => '3-3-6', 'img' => $path . '1.4_1.4_2.4.png', 'title' => __( '1/4 - 1/4 - 2/4', 'themify' ) ),
-		array( 'value' => '3-6-3', 'img' => $path . '1.4_2.4_1.4.png', 'title' => __( '1/4 - 2/4 - 1/4', 'themify' ) ),
-		array( 'value' => '3-9', 'img' => $path . '1.4_3.4.png', 'title' => __( '1/4 - 3/4', 'themify' ) ),
-		array( 'value' => '9-3', 'img' => $path . '3.4_1.4.png', 'title' => __( '3/4 - 1/4', 'themify' ) ),
-	) );
-}
 
 /**
  * Save the mega menu option for menu items
@@ -388,6 +417,7 @@ function themify_update_mega_menu_option( $menu_id, $menu_item_db_id, $args ) {
 		'_themify_mega_menu_item_tax' => 'menu-item-tf-mega_tax',
 		'_themify_dropdown_columns'   => 'menu-item-tf-dropdown_columns',
 		'_themify_mega_menu_columns_layout'   => 'menu-item-tf-mega-columns-layout',
+		'_themify_highlight_link'   => 'menu-item-tf-highlight',
 	);
 
 	/**
@@ -429,6 +459,7 @@ function themify_remove_mega_menu_meta( $post_id ) {
 		delete_post_meta( $post_id, '_themify_mega_menu_column' );
 		delete_post_meta( $post_id, '_themify_mega_menu_column_sub_item' );
 		delete_post_meta( $post_id, '_themify_mega_menu_dual' );
+		delete_post_meta( $post_id, '_themify_highlight_link' );
 	}
 }
 add_action( 'delete_post', 'themify_remove_mega_menu_meta', 1, 3 );
@@ -496,7 +527,7 @@ class Themify_Widgets_Menu {
 			$class = $this->get_widget_menu_class( $item );
 
 			/* Check widget availability */
-			if( ! isset( $wp_widget_factory->widgets[$class] ) )
+			if ( ! isset( $wp_widget_factory->widgets[ $class ] ) )
 				return;
 			?>
 			<input type="hidden" class="themify-widget-menu-type" value="widget" />
@@ -515,8 +546,21 @@ class Themify_Widgets_Menu {
 	}
 
 	function wp_update_nav_menu_item( $menu_id, $menu_item_db_id, $args ) {
-		if( isset( $_POST['menu-item-widget-options'] ) && isset( $_POST['menu-item-widget-options'][$menu_item_db_id] ) )
-			$this->save_meta( $this->meta_key, $_POST['menu-item-widget-options'][$menu_item_db_id], $menu_item_db_id );
+		global $wp_widget_factory;
+
+		if ( isset( $_POST['menu-item-widget-options'] ) && isset( $_POST['menu-item-widget-options'][ $menu_item_db_id ] ) ) {
+			$new_instance = $_POST['menu-item-widget-options'][ $menu_item_db_id ];
+			/* the widget class is stored in the menu item URL field */
+			$widget_class = ltrim( $_POST['menu-item-url'][ $menu_item_db_id ], '#' );
+			if ( isset( $wp_widget_factory->widgets[ $widget_class ] ) ) {
+				
+				$old_instance = get_post_meta( $menu_item_db_id, $this->meta_key, true );
+				if ( ! is_array( $old_instance ) )
+					$old_instance = array();
+				$new_instance = $wp_widget_factory->widgets[ $widget_class ]->update( $new_instance, $old_instance );
+				$this->save_meta( $this->meta_key, $new_instance, $menu_item_db_id );
+			}
+		}
 	}
 
 	function nav_menu_script() {
@@ -526,7 +570,6 @@ class Themify_Widgets_Menu {
 
 		wp_enqueue_script( 'themify-widgets-menu-admin', THEMIFY_URI . '/megamenu/js/admin-nav-menu.js', array( 'jquery' ) );
 		wp_enqueue_style( 'themify-widgets-menu-admin', THEMIFY_URI . '/megamenu/css/megamenu-admin.css' );
-		Themify_Metabox::get_instance()->enqueue();
 
 		do_action( 'themify_widgets_menu_enqueue_admin_scripts' );
 		remove_action( 'admin_enqueue_scripts', array( &$this, 'nav_menu_script' ), 12 );
@@ -653,3 +696,18 @@ function themify_megamenu_minify_vars( $vars ) {
 	return $vars;
 }
 add_filter( 'themify_main_script_vars', 'themify_megamenu_minify_vars', 10, 1 );
+
+/**
+ * Allow Layout Part post type in navigation menus
+ *
+ * @return array
+ * @since 3.3.5
+ */
+function themify_allow_layout_parts_in_nav_menus( $args, $name ) {
+	if ( 'tbuilder_layout_part' == $name ) {
+		$args['show_in_nav_menus'] = true;
+	}
+
+	return $args;
+}
+// add_filter( 'register_post_type_args', 'themify_allow_layout_parts_in_nav_menus', 10, 2 );

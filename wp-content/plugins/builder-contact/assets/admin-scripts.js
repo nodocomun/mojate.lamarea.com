@@ -23,8 +23,8 @@
 						name2 = $( b ).find( '.tb_lb_option' ).attr( 'id' ),
 						data;
 
-					name1 = undefined === name1 ? $( a ).find( '.tb-new-field-textbox' ).val() : name1;
-					name2 = undefined === name2 ? $( b ).find( '.tb-new-field-textbox' ).val() : name2;
+					name1 = undefined === name1 ? $( a ).find( '.tb_new_field_textbox' ).val() : name1;
+					name2 = undefined === name2 ? $( b ).find( '.tb_new_field_textbox' ).val() : name2;
 					try {
 						data = JSON.parse($('#field_order').val());
 					} catch(e) {}
@@ -44,7 +44,7 @@
 			loadExtraFields: function() {
 				var _this = this,
 					data,
-					$row = $( '.tb-new-field-row' );
+					$row = $( '.tb_new_field_row' );
 				try {
 					data = JSON.parse($('#field_extra').val());
 				} catch(e) {}
@@ -55,7 +55,7 @@
 				if( $('#tmpl-builder-contact-new-field').length ) {
 					var template = $('#tmpl-builder-contact-new-field').html();
 				}else{
-					var template = $('#themify_builder_site_canvas_iframe').contents()
+					var template = $('#tb_site_canvas_iframe').contents()
 						.find('#tmpl-builder-contact-new-field').html();
 				}
 				_.templateSettings = {
@@ -69,7 +69,7 @@
 					var fieldTemplate = _.template( template, {variable: 'data'} );
 
 					field.index = ++index;
-					data.id = _this.$table.find( '.tb-contact-new-row' ).length++;
+					data.id = _this.$table.find( '.tb_contact_new_row' ).length++;
 					data.field = field;
 					var $newField = $( fieldTemplate( data ) );
 					$newField.insertBefore( $row );
@@ -79,41 +79,45 @@
 			events: function() {
 				var _this = this;
 				this.$table
-					.on( 'click', '.tb-new-field-action', function( e ) {
+					.on( 'click', '.tb_new_field_action', function( e ) {
 						e.preventDefault();
 						_this.addField( this );
 					})
-					.on( 'change', 'input[name*="tb-new-field-type-"]', function() {
+					.on( 'change', 'input[name*="tb_new_field_type_"]', function() {
 						_this.switchField( this );
 					})
-					.on( 'click', '.tb-add-field-option', function( e ) {
+					.on( 'click', '.tb_add_field_option', function( e ) {
 						e.preventDefault();
-						$( this ).siblings('ul').append('<li><input type="text" class="tb-multi-option"><a href="#" class="tb-contact-value-remove"><i class="ti ti-close"></i></a></li>')
+						$( this ).siblings('ul').append('<li><input type="text" class="tb_multi_option"><a href="#" class="tb_contact_value_remove"><i class="ti ti-close"></i></a></li>')
 					})
-					.on( 'change', '.tb-multi-option', function(){
+					.on( 'change', '.tb_multi_option', function(){
 						_this.setNames();
 					})
-					.on( 'keyup', '.tb-contact-new-row input[type="text"], .tb-contact-new-row textarea', function(){
+					.on( 'keyup', '.tb_contact_new_row input[type="text"], .tb_contact_new_row textarea', function(){
 						_this.changeObject();
 					})
-					.on( 'change', '.tb-contact-new-row .tb-new-field-required', function(){
+					.on( 'change', '.tb_contact_new_row .tb_new_field_required', function(){
 						_this.changeObject();
 					})
-					.on( 'click', '.tb-contact-value-remove', function(e){
+					.on( 'click', '.tb_contact_value_remove', function(e){
 						e.preventDefault();
 						$( this ).closest('li').remove();
 						_this.changeObject();
 					})
-					.on( 'click', '.tb-contact-field-remove', function(e){
+					.on( 'click', '.tb_contact_field_remove', function(e){
 						e.preventDefault();
 						$( this ).closest('tr').remove();
 						_this.changeObject();
-					})
+					});
+				
+				if( ! $( '#field_message_active_field' ).prop( 'checked' ) ) {
+					$( '#field_message_active_reverse' ).prop( 'checked', true );
+				}
 			},
 
 			setNames: function() {
-				this.$table.find('.tb-multi-option').each(function( index ){
-					var name = $( this ).closest('tr').find('.tb-new-field-textbox').val();
+				this.$table.find('.tb_multi_option').each(function( index ){
+					var name = $( this ).closest('tr').find('.tb_new_field_textbox').val();
 					name = name.toLowerCase();
 					name = name.replace(/ /g,'_');
 					$( this )
@@ -126,7 +130,7 @@
 				var _this = this;
 
 				this.$table.find( 'tbody' ).sortable( {
-					items: 'tr:not(.tb-new-field-row)',
+					items: 'tr:not(.tb_new_field_row)',
 					placeholder: "ui-state-highlight",
 					update: function() {
 						_this.changeObject();
@@ -141,7 +145,7 @@
 				$( '.contact_fields tr' ).each(function(){
 					var name = $( this ).find( '.tb_lb_option' ).attr( 'id' );
 					if( ! name ){
-						name = $( this ).find( '.tb-new-field-textbox' ).val()
+						name = $( this ).find( '.tb_new_field_textbox' ).val()
 					}
 					newOrder[name] = $( this ).index();
 				});
@@ -160,7 +164,7 @@
 				if( $('#tmpl-builder-contact-new-field').length ) {
 					var template = $('#tmpl-builder-contact-new-field').html();
 				}else{
-					var template = $('#themify_builder_site_canvas_iframe').contents()
+					var template = $('#tb_site_canvas_iframe').contents()
 						.find('#tmpl-builder-contact-new-field').html();
 				}
 
@@ -171,11 +175,11 @@
 				};
 				var fieldTemplate = _.template( template, {variable: 'data'} );
 
-				data.id = tbody.find( '.tb-contact-new-row' ).length++;
+				data.id = tbody.find( '.tb_contact_new_row' ).length++;
 				var $newField = $( fieldTemplate( data ) );
 				$newField.insertBefore( row );
 
-				$newField.find('input[name*="tb-new-field-type-"]:checked').trigger('keyup');
+				$newField.find('input[name*="tb_new_field_type_"]:checked').trigger('keyup');
 
 				tbody.sortable( 'refresh' );
 				this.changeObject();
@@ -184,11 +188,11 @@
 			switchField: function( el ) {
 				var type = $( el ).val();
 
-				$( el ).closest( '.tb-new-field-type' ).next().find('.control-input').html( this.fieldUI( type ) );
+				$( el ).closest( '.tb_new_field_type' ).next().find('.control-input').html( this.fieldUI( type ) );
 				if( 'static' === type ){
-					$( el ).closest( '.tb-new-field-type' ).next().find('.tb-new-field-required').parent().css('display', 'none');
+					$( el ).closest( '.tb_new_field_type' ).next().find('.tb_new_field_required').parent().css('display', 'none');
 				}else{
-					$( el ).closest( '.tb-new-field-type' ).next().find('.tb-new-field-required').parent().css('display', '');
+					$( el ).closest( '.tb_new_field_type' ).next().find('.tb_new_field_required').parent().css('display', '');
 
 				}
 			},
@@ -199,10 +203,10 @@
 				switch( type ) {
 					case 'text':
 					case 'textarea':
-						input = $( '<input type="text" placeholder="Placeholder" class="tb-new-field-value tb-field-type-' + type + '">' );
+						input = $( '<input type="text" placeholder="Placeholder" class="tb_new_field_value tb_field_type_' + type + '">' );
 						break;
 					case 'static':
-						input = $( '<textarea placeholder="Enter text or HTML here" class="tb-new-field-value tb-field-type-' + type + '"></textarea>' );
+						input = $( '<textarea placeholder="Enter text or HTML here" class="tb_new_field_value tb_field_type_' + type + '"></textarea>' );
 						break;
 					case 'radio':
 					case 'select':
@@ -210,7 +214,7 @@
 						if( $('#tmpl-builder-contact-new-field-options').length ){
 							var template = $('#tmpl-builder-contact-new-field-options').html();
 						}else{
-							var template = $('#themify_builder_site_canvas_iframe').contents()
+							var template = $('#tb_site_canvas_iframe').contents()
 								.find('#tmpl-builder-contact-new-field-options').html();
 						}
 
@@ -237,24 +241,24 @@
 			changeObject: function() {
 				var object = { fields: [] };
 
-				this.$table.find( '.tb-contact-new-row' ).each(function(){
+				this.$table.find( '.tb_contact_new_row' ).each(function(){
 					var $this = $( this ),
-						type = $this.find( 'input[name*="tb-new-field-type-"]:checked' ).val(),
+						type = $this.find( 'input[name*="tb_new_field_type_"]:checked' ).val(),
 						order = $this.index(),
-						label = $this.find( '.tb-new-field-textbox' ).val(),
-						required = $this.find( '.tb-new-field-required' ).is(':checked'),
+						label = $this.find( '.tb_new_field_textbox' ).val(),
+						required = $this.find( '.tb_new_field_required' ).is(':checked'),
 						value;
 					switch( type ) {
 						case 'text':
 						case 'textarea':
 						case 'static':
-							value = $this.find( '.tb-new-field-value' ).val();
+							value = $this.find( '.tb_new_field_value' ).val();
 							break;
 						case 'radio':
 						case 'select':
 						case 'checkbox':
 							value = [];
-							$this.find( '.tb-multi-option' ).each(function(){
+							$this.find( '.tb_multi_option' ).each(function(){
 								value.push( $( this ).val() )
 							});
 							break;
@@ -278,8 +282,13 @@
 		$( 'body' ).on( 'editing_module_option', function() {
 			setTimeout(function(){
 				new contactFormBuilder( '.contact_fields' );
-			},10)
+				$('#field_message_active_reverse').on('click',function (  ) {
+					$('#field_message_active_field').trigger('click');
+				});
+			},10);
+
+
 		} );
-	} )
+	} );
 
 } )( jQuery );

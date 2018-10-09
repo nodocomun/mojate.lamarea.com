@@ -33,7 +33,7 @@ if (!empty($settings['img_content_slider'])):
         <li>
             <div class="slide-inner-wrap"<?php if ($settings['margin'] !== ''): ?> style="<?php echo $settings['margin']; ?>"<?php endif; ?>>
                 <?php if (!empty($content['img_url_slider'])): ?>
-                    <div class="slide-image<?php printf( empty( $settings['img_h_slider'] ) ? '"' : ' custom-height" style="height:%spx"', $settings['img_h_slider'] ); ?>>
+                    <div class="slide-image">
                         <?php
                         $image_url = isset($content['img_url_slider']) ? esc_url($content['img_url_slider']) : '';
                         

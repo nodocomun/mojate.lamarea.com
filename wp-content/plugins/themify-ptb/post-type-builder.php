@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name:       Post Type Builder
- * Plugin URI:        http://themify.me/post-type-builder
+ * Plugin URI:        https://themify.me/post-type-builder
  * Description:       This "all-in-one" plugin allows you to create Custom Post Types, Meta Boxes, Taxonomies, and Templates.
- * Version:           1.4.7 
+ * Version:           1.5.0
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb
  * Domain Path:       /languages
  */

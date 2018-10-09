@@ -3,8 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class Themify_Builder_Upgrader extends WP_Upgrader {
 
-	var $cookies;
-	var $show_before = '';
+	public $cookies;
+	public $show_before = '';
 
 	function upgrade_strings() {
 		$this->strings['up_to_date'] = __('The plugin is at the latest version.', 'themify');
@@ -32,7 +32,7 @@ class Themify_Builder_Upgrader extends WP_Upgrader {
 					'clear_destination' => true,
 					'clear_working' => true,
 					'hook_extra' => array(
-								'plugin' => $plugin
+                                            'plugin' => $plugin
 					)
 				));
 
@@ -89,13 +89,13 @@ class Themify_Builder_Upgrader extends WP_Upgrader {
 	//Hooked to pre_install
 	function deactivate_plugin_before_upgrade($return, $plugin) {
 
-		if ( is_wp_error($return) ) //Bypass.
+		if ( is_wp_error($return) ){ //Bypass.
 			return $return;
+                }
 
-		$plugin = isset($plugin['plugin']) ? $plugin['plugin'] : '';
-		if ( empty($plugin) )
-			return new WP_Error('bad_request', $this->strings['bad_request']);
-		
+		if ( empty($plugin['plugin']) ){
+                    return new WP_Error('bad_request', $this->strings['bad_request']);
+                }
 	}
 
 	//Hooked to upgrade_clear_destination
@@ -116,7 +116,7 @@ class Themify_Builder_Upgrader extends WP_Upgrader {
 			return $removed;
 
 		// If plugin is in its own directory, recursively delete the directory.
-		if ( strpos($plugin, '/') && $this_plugin_dir != $plugins_dir ) //base check on if plugin includes directory separator AND that it's not the root plugin folder
+		if ( strpos($plugin, '/') && $this_plugin_dir !== $plugins_dir ) //base check on if plugin includes directory separator AND that it's not the root plugin folder
 			$deleted = $wp_filesystem->delete($this_plugin_dir, true);
 		else
 			$deleted = $wp_filesystem->delete($plugins_dir . $plugin);
@@ -129,9 +129,7 @@ class Themify_Builder_Upgrader extends WP_Upgrader {
 
 	//return plugin info.
 	function plugin_info() {
-		if ( ! is_array($this->result) )
-			return false;
-		if ( empty($this->result['destination_name']) )
+		if ( ! is_array($this->result) || empty($this->result['destination_name']) )
 			return false;
 
 		$plugin = get_plugins('/' . $this->result['destination_name']); //Ensure to pass with leading slash
@@ -143,4 +141,3 @@ class Themify_Builder_Upgrader extends WP_Upgrader {
 		return $this->result['destination_name'] . '/' . $pluginfiles[0];
 	}
 }
-?>

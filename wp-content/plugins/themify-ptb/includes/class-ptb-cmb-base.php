@@ -123,10 +123,6 @@ class PTB_CMB_Base {
         //render cmb
         add_action('ptb_cmb_render_' . $type, array($this, 'render_post_type_meta'), 10, 3);
 
-
-        add_filter('ptb_cmb_update', array($this, 'update_post_type_meta'), 10, 3);
-
-
         //add_action( 'ptb_cmb_render', function ( $post, $meta_key, $args ) {}, 10, 3 );
 
         add_action('ptb_cmb_print_' . $type, array($this, 'print_meta_data'), 10, 3);
@@ -171,40 +167,6 @@ class PTB_CMB_Base {
     }
 
     /**
-     * Update post meta
-     *
-     * @since 1.0.0
-     *
-     * @param WP_Post $post
-     * @param PTB_Options $options_obj
-     */
-    public function update_post_type_meta($post, $options_obj) {
-
-        $cmb_options = $options_obj->get_cpt_cmb_options($post->post_type);
-        $cmb_options = apply_filters('ptb_filter_cmb_body', $cmb_options, $post);
-        foreach ($cmb_options as $id => $args) {
-
-            if ($args['type'] === $this->get_type()) {
-
-                $meta_key = $id;
-                
-                $wp_meta_key = sprintf('%s_%s', $this->get_plugin_name(), $meta_key);
-
-                if (!isset($_POST[$meta_key])) {
-                    delete_post_meta($post->ID, $wp_meta_key);
-                    return;
-                }
-
-                // Sanitize user input.
-                $my_data = $_POST[$meta_key];
-
-                // Update the meta field in the database.
-                update_post_meta($post->ID, $wp_meta_key, $my_data);
-            }
-        }
-    }
-
-    /**
      * Echo the repeatable texts
      *
      * @since 1.0.0
@@ -225,6 +187,8 @@ class PTB_CMB_Base {
         if(empty($data)){
             return false;
         }
+		
+		$first = true;
         switch ($display):
             case 'list':
             case 'bullet_list':
@@ -232,10 +196,11 @@ class PTB_CMB_Base {
                 <ul>
                     <?php foreach ($data as $value): ?>
                         <li>
-                            <?php if ($seperator!==false): ?>
-                                <?php echo $seperator; $seperator=false;?>
+                            <?php if ($seperator!==false && !$first): ?>
+								<?php echo $seperator;?>
                             <?php endif; ?>
                             <?php echo $value ?>
+							<?php $first=false; ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -246,10 +211,11 @@ class PTB_CMB_Base {
                 <ol>
                     <?php foreach ($data as $value): ?>
                         <li>
-                            <?php if ($seperator!==false): ?>
-                            <?php echo $seperator; $seperator=false;?>
+							<?php if ($seperator!==false && !$first): ?>
+								<?php echo $seperator;?>
                         <?php endif; ?>
                             <?php echo $value ?>
+							<?php $first=false; ?>
                         </li>
                     <?php endforeach; ?>
                 </ol>
@@ -259,10 +225,11 @@ class PTB_CMB_Base {
                 ?>
                 <?php foreach ($data as $value): ?>
                     <p class="ptb_paragraph">
-                        <?php if ($seperator!==false): ?>
-                            <?php echo $seperator; $seperator=false;?>
+						<?php if ($seperator!==false && !$first): ?>
+							<?php echo $seperator;?>
                         <?php endif; ?>
                         <?php echo $value ?>
+                        <?php $first=false; ?>
                     </p>
                 <?php endforeach; ?>
                 <?php
@@ -271,11 +238,12 @@ class PTB_CMB_Base {
                 ?>
                 <span class="ptb_one_line">
                     <?php foreach ($data as $value): ?>
-                        <?php if ($seperator!==false): ?>
-                            <?php echo $seperator; $seperator=false;?>
+						<?php if ($seperator!==false && !$first): ?>
+							<?php echo $seperator;?>
                         <?php endif; ?>
                         <?php echo $value; ?>
-                    <?php endforeach; ?>
+						<?php $first=false; ?>
+                    <?php endforeach;  ?>
                 </span>
                 <?php break; ?>
         <?php endswitch;

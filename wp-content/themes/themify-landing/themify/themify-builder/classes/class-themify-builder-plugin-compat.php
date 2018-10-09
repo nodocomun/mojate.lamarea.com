@@ -36,11 +36,16 @@ class Themify_Builder_Plugin_Compat {
 		if (themify_is_woocommerce_active() ) {
 			add_action( 'woocommerce_after_single_product_summary', array( $this, 'show_builder_below_tabs'), 12 );
 			add_action( 'woocommerce_archive_description', array( $this, 'wc_builder_shop_page' ), 11 );
+			add_action( 'woocommerce_before_template_part', array( $this, 'before_woocommerce_templates' ) );
+			add_action( 'woocommerce_after_template_part', array( $this, 'after_woocommerce_templates' ) );
+			add_filter( 'woocommerce_short_description', array( $this, 'filter_products_description' ) );
 		}
 
 		// WPML compatibility
-		if ( $this->is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
+		if ( Themify_Builder_Model::is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' ) ) {
 			add_action( 'wp_ajax_themify_builder_icl_copy_from_original', array( $this, 'icl_copy_from_original' ) );
+			add_filter( 'themify_logo_home_url', array( $this, 'themify_wpml_logo_home_url' ) );
+			add_filter( 'themify_customizer_logo_home_url', array( $this, 'themify_wpml_logo_home_url' ) );
 		}
 
 		// Paid Membership Pro
@@ -59,7 +64,7 @@ class Themify_Builder_Plugin_Compat {
 		}
 
 		// Duplicate Post plugin
-		if ( $this->is_plugin_active( 'duplicate-post/duplicate-post.php' ) ) {
+		if ( Themify_Builder_Model::is_plugin_active( 'duplicate-post/duplicate-post.php' ) ) {
 			add_filter( 'option_duplicate_post_blacklist', array( $this, 'dp_meta_backlist'), 10, 2 );
 			add_action('dp_duplicate_post', array( $this, 'dp_duplicate_builder_data'), 10, 2);
 			add_action('dp_duplicate_page', array( $this, 'dp_duplicate_builder_data'), 10, 2);
@@ -67,7 +72,7 @@ class Themify_Builder_Plugin_Compat {
 
 		// BWP Minify Plugin
 		// Only apply the filter when WP Multisite with subdirectory install.
-		if (defined( 'SUBDOMAIN_INSTALL' ) && !SUBDOMAIN_INSTALL && $this->is_plugin_active('bwp-minify/bwp-minify.php') ) {
+		if (defined( 'SUBDOMAIN_INSTALL' ) && !SUBDOMAIN_INSTALL && Themify_Builder_Model::is_plugin_active('bwp-minify/bwp-minify.php') ) {
 			add_filter( 'bwp_minify_get_src', array( $this, 'bwp_minify_get_src' ) );
 		}
 
@@ -82,13 +87,32 @@ class Themify_Builder_Plugin_Compat {
 		add_filter( 'themify_builder_is_frontend_editor', array( $this, 'thrive_compat' ) );
 
 		// WP Gallery Custom Links
-		if( $this->is_plugin_active( 'wp-gallery-custom-links/wp-gallery-custom-links.php' ) ) {
+		if( Themify_Builder_Model::is_plugin_active( 'wp-gallery-custom-links/wp-gallery-custom-links.php' ) ) {
 			add_filter( 'themify_builder_image_link_before', array( $this, 'wp_gallery_custom_links' ), 10, 3 );
 		}
 
 		// WordPress Related Posts
-		if( $this->is_plugin_active( 'wordpress-23-related-posts-plugin/wp_related_posts.php' ) ) {
+		if( Themify_Builder_Model::is_plugin_active( 'wordpress-23-related-posts-plugin/wp_related_posts.php' ) ) {
 			add_action( 'init', array( $this, 'wp_related_posts' ) );
+		}
+
+		// The Events Calendar
+		if ( defined( 'TRIBE_EVENTS_FILE' ) ) {
+			add_action( 'template_redirect', array( $this, 'the_events_calendar_fix' ) );
+		}
+
+		/**
+		 * Smart Cookie Kit
+		 * @link https://wordpress.org/plugins/smart-cookie-kit/
+		 */
+		if ( class_exists( 'NMOD_SmartCookieKit_Frontend' ) ) {
+			if ( Themify_Builder_Model::is_front_builder_activate() ) {
+				remove_action( 'wp_enqueue_scripts', array( NMOD_SmartCookieKit_Frontend::init(), 'buffer_set' ), 0 );
+				remove_action( 'wp_print_footer_scripts', array( NMOD_SmartCookieKit_Frontend::init(), 'buffer_unset' ), 10 );
+
+				remove_action( 'wp_enqueue_scripts', array( NMOD_SmartCookieKit_Frontend::init(), 'enqueue_scripts' ), 1 );
+				remove_action( 'wp_print_footer_scripts', array( NMOD_SmartCookieKit_Frontend::init(), 'run_fontend_kit' ), 99999 );
+			}
 		}
 	}
 
@@ -185,6 +209,13 @@ class Themify_Builder_Plugin_Compat {
 	}
 
 	/**
+	 * WPML logo URL support
+	 */
+	public function themify_wpml_logo_home_url( $url ) {
+		return apply_filters( 'wpml_home_url', $url );
+	}
+
+	/**
 	 * Render builder below WooCommerce Tabs.
 	 * 
 	 * @access public
@@ -196,7 +227,7 @@ class Themify_Builder_Plugin_Compat {
 
 		global $post, $ThemifyBuilder;
 		if ( Themify_Builder_Model::is_front_builder_activate() ) {
-			echo $ThemifyBuilder->get_active_builder_data( $post->ID );
+			echo $ThemifyBuilder->get_active_builder_data( $post->ID ) . $ThemifyBuilder->get_builder_stylesheet('');
 		} else {
 			$builder_data = $ThemifyBuilder->get_builder_data( $post->ID );
 			$output = Themify_Builder_Component_Base::retrieve_template( 'builder-output.php', array( 'builder_output' => $builder_data, 'builder_id' => $post->ID ), '', '', false );
@@ -210,18 +241,39 @@ class Themify_Builder_Plugin_Compat {
 	 * @access public
 	 */
 	public function wc_builder_shop_page() {
-		if ( is_shop() ) {
-			$shop_page = Themify_Builder_Model::get_ID();
+		if ( is_shop() && ( $shop_page = get_post( wc_get_page_id( 'shop' ) ) ) ) {
+			$shop_page = $shop_page->ID;
 			global $ThemifyBuilder;
 			if(Themify_Builder_Model::is_front_builder_activate()){
-				echo $ThemifyBuilder->get_active_builder_data($shop_page);
-			}
-			else{
-							$builder_data = $ThemifyBuilder->get_builder_data( $shop_page);
-							$output = Themify_Builder_Component_Base::retrieve_template( 'builder-output.php', array( 'builder_output' => $builder_data, 'builder_id' => $shop_page ), '', '', false );
-							echo $ThemifyBuilder->get_builder_stylesheet( $output ) . $output;
+				echo $ThemifyBuilder->get_active_builder_data($shop_page) . $ThemifyBuilder->get_builder_stylesheet('');
+			} else {
+				$builder_data = $ThemifyBuilder->get_builder_data( $shop_page);
+				$output = Themify_Builder_Component_Base::retrieve_template( 'builder-output.php', array( 'builder_output' => $builder_data, 'builder_id' => $shop_page ), '', '', false );
+				echo $ThemifyBuilder->get_builder_stylesheet( $output ) . $output;
 			}
 		}
+	}
+
+	/**
+	 * Avoid render buider content in WooCommerce content
+	 */
+
+	public function before_woocommerce_templates() {
+		if( Themify_Builder_Model::is_front_builder_activate() ) {
+			global $ThemifyBuilder;
+			remove_filter( 'the_content', array( $ThemifyBuilder, 'builder_show_on_front'), 11 );
+		}
+	}
+
+	public function after_woocommerce_templates() {
+		if( Themify_Builder_Model::is_front_builder_activate() ) {
+			global $ThemifyBuilder;
+			add_filter( 'the_content', array( $ThemifyBuilder, 'builder_show_on_front' ), 11 );
+		}
+	}
+
+	public function filter_products_description( $content ) {
+		return is_post_type_archive( 'product' ) ? apply_filters( 'the_content', $content ) : $content;
 	}
 
 	/**
@@ -252,24 +304,7 @@ class Themify_Builder_Plugin_Compat {
 		echo apply_filters( 'the_content', $post->post_content );
 	}
 
-	/**
-	 * Plugin Active checking
-	 * 
-	 * @access public
-	 * @param string $plugin 
-	 * @return bool
-	 */
-	public function is_plugin_active( $plugin ) {
-		$network_active = false;
-		if ( is_multisite() ) {
-			$plugins = get_site_option( 'active_sitewide_plugins' );
-			if ( isset( $plugins[ $plugin ] ) ) {
-							$network_active = true;
-			}
-		}
-		return   $network_active || in_array( $plugin, apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) );
-	}
-
+	
 	/**
 	 * Get all builder text content from module which contain text
 	 * 
@@ -388,7 +423,7 @@ class Themify_Builder_Plugin_Compat {
 	 * @return boolean
 	 */
 	public function is_yoast_seo_active() {
-		return $this->is_plugin_active( 'wordpress-seo/wp-seo.php' ) || $this->is_plugin_active( 'wordpress-seo-premium/wp-seo-premium.php' );	
+		return Themify_Builder_Model::is_plugin_active( 'wordpress-seo/wp-seo.php' ) || Themify_Builder_Model::is_plugin_active( 'wordpress-seo-premium/wp-seo-premium.php' );	
 	}
 
 	/**
@@ -399,5 +434,27 @@ class Themify_Builder_Plugin_Compat {
 	 */
 	function thrive_compat( $enabled ) {
 		return isset( $_GET['tve'] ) && $_GET['tve'] === 'true' && function_exists( 'tve_editor_content' )?false:$enabled;
+	}
+
+	/**
+	 * Fix duplicate content in The Events Calendar plugin
+	 *
+	 * @link https://wordpress.org/plugins/the-events-calendar/
+	 */
+	function the_events_calendar_fix() {
+		if ( is_singular( 'tribe_events' ) ) {
+			add_filter( 'tribe_events_after_html', array( $this, 'tribe_events_after_html' ) );
+		}
+	}
+
+	/**
+	 * Disable Builder frontend output after "tribe_events_after_html" filter
+	 *
+	 * @return string
+	 */
+	function tribe_events_after_html( $after ) {
+		global $ThemifyBuilder;
+		remove_filter( 'the_content', array( $ThemifyBuilder, 'builder_show_on_front' ), 11 );
+		return $after;
 	}
 }

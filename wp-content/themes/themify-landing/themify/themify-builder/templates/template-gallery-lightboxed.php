@@ -16,7 +16,7 @@ if (empty($settings['thumbnail_gallery'])) {
 $thumbnail = themify_get_image("ignore=true&src={$settings['thumbnail_gallery']}&w={$settings['thumb_w_gallery']}&h={$settings['thumb_h_gallery']}&alt={$alt}");
 foreach ($settings['gallery_images'] as $key => $image):
     ?>
-    <dl class="gallery-item" style="<?php echo $key === 0 ? '' : 'display: none;'; ?>">
+    <dl class="gallery-item"<?php if($key!==0):?> style="display: none;"<?php endif;?>>
         <?php
         $link = wp_get_attachment_url($image->ID);
         $img = wp_get_attachment_image_src($image->ID, 'full');
@@ -25,7 +25,7 @@ foreach ($settings['gallery_images'] as $key => $image):
         $caption = $image->post_excerpt;
         if (!empty($link)):
             ?>
-            <dt class="gallery-icon"><a href="<?php echo esc_url($link) ?>" title="<?php echo esc_attr($title) ?>">
+            <dt class="gallery-icon"><a href="<?php echo esc_url($link) ?>" title="<?php  esc_attr_e($title) ?>">
             <?php endif; ?>
             <?php
             echo $key === 0 ? $thumbnail : $img[1];
@@ -33,8 +33,8 @@ foreach ($settings['gallery_images'] as $key => $image):
                 ?>
             </a></dt>
         <?php endif; ?>
-        <dd<?php if ($settings['gallery_image_title'] === 'library' && $title !== ''): ?> class="wp-caption-text gallery-caption"<?php endif; ?>>
-            <?php if ($settings['gallery_image_title'] === 'library' && !empty($title)): ?>
+        <dd<?php if ($settings['gallery_image_title'] === 'yes' && $title !== ''): ?> class="wp-caption-text gallery-caption"<?php endif; ?>>
+            <?php if ($settings['gallery_image_title'] === 'yes' && !empty($title)): ?>
                 <strong class="themify_image_title"><?php echo $title; ?></strong>
             <?php endif; ?>
             <?php if ($settings['gallery_exclude_caption'] !== 'yes' && !empty($caption)): ?>

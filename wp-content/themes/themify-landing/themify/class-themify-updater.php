@@ -22,19 +22,17 @@ class Themify_Upgrader_Skin extends WP_Upgrader_Skin {
 	 * request_filesystem_credentials now pass cookies
 	 */
 
-	var $theme = '';
-	var $type = '';
-	var $login = '';
-	var $cookies = '';
+	public $theme = '';
+	public $type = '';
+	public $login = '';
+	public $cookies = '';
 
 	function __construct($args = array()) {
 		$defaults = array(	'type' 	=> '',	'login' => '',	'url' 	=> '', 'theme' => '',
 							'nonce' => '',	'title' => __('Update Theme', 'themify'), 'cookies' => null );
 		$args = wp_parse_args($args, $defaults);
-		if( $args['login'] == 'true') $this->login = 'true';
-		else $this->login = 'false';
-		if( $args['type'] == 'framework' ) $this->type = 'framework';
-		else $this->type = 'theme';
+		$this->login = $args['login'] == 'true'?'true':'false';
+		$this->type = $args['type'] === 'framework'?'framework':'theme';
 		$this->theme = $args['theme'];
 		$this->cookies = $args['cookies'];
 		parent::__construct($args);
@@ -42,8 +40,9 @@ class Themify_Upgrader_Skin extends WP_Upgrader_Skin {
 
 	function request_filesystem_credentials( $error = false, $context = false, $allow_relaxed_file_ownership = false ) {
 		$url = 'admin.php?page=themify&action=upgrade&type='. $this->type .'&login=false';
-		if ( !empty($this->options['nonce']) )
+		if ( !empty($this->options['nonce']) ){
 			$url = wp_nonce_url($url, $this->options['nonce']);
+                }
 		return request_filesystem_credentials($url, '', $error, false, array($this->cookies));
 	}
 
@@ -64,7 +63,7 @@ class Themify_Upgrader_Skin extends WP_Upgrader_Skin {
 			$update_actions['preview']  = '<a href="' . esc_url( $preview_link ) . '" class="thickbox thickbox-preview" title="' . esc_attr( sprintf( __( 'Preview &#8220;%s&#8221;', 'themify' ), $name ) ) . '">' . __( 'Preview', 'themify' ) . '</a>';
 			$update_actions['activate'] = '<a href="' . esc_url( $activate_link ) . '" class="activatelink" title="' . esc_attr( sprintf( __( 'Activate &#8220;%s&#8221;', 'themify' ), $name ) ) . '">' . __( 'Activate', 'themify' ) . '</a>';
 
-			if ( ( ! $this->result || is_wp_error($this->result) ) || $stylesheet == get_stylesheet() )
+			if ( ( ! $this->result || is_wp_error($this->result) ) || $stylesheet === get_stylesheet() )
 				unset($update_actions['preview'], $update_actions['activate']);
 		}
 
@@ -78,15 +77,14 @@ class Themify_Upgrader_Skin extends WP_Upgrader_Skin {
 		if ( $this->done_header )
 			return;
 		$this->done_header = true;
-		echo '<div class="wrap">';
-		echo '<h2>' . esc_html( $this->options['title'] ) . '</h2>';
+		echo '<div class="wrap">', '<h2>' . esc_html( $this->options['title'] ) . '</h2>';
 	}
 }
 
 class Themify_Upgrader extends WP_Upgrader {
 
-	var $result;
-	var $cookies;
+        public $result;
+	public $cookies;
 
 	function upgrade_strings() {
 		$this->strings['up_to_date'] = __('The theme is at the latest version.', 'themify');
@@ -112,7 +110,7 @@ class Themify_Upgrader extends WP_Upgrader {
 			if ( in_array( $filename, $skip_list ) ){
 				echo '<p><strong>' . sprintf( esc_html__( 'Skipping %s', 'themify' ), $filename ) . '</strong></p>';
 				continue;
-			} elseif ( $wp_filesystem->exists($to . $filename) && 'f' == $fileinfo['type'] ) {
+			} elseif ( $wp_filesystem->exists($to . $filename) && 'f' === $fileinfo['type'] ) {
 				echo '<p>' . sprintf( esc_html__( 'Deleting %s', 'themify' ), $filename ) . '</p>';
 				$removed = $wp_filesystem->delete($to . $filename, true);
 				if ( is_wp_error($removed) ) {
@@ -122,14 +120,14 @@ class Themify_Upgrader extends WP_Upgrader {
 				}
 			}
 			echo '<p>' . sprintf(__('Copying %s', 'themify'), $filename) . '</p>';
-			if ( 'f' == $fileinfo['type'] ) {
+			if ( 'f' === $fileinfo['type'] ) {
 				if ( ! $wp_filesystem->copy($from . $filename, $to . $filename, true, FS_CHMOD_FILE) ) {
 					// If copy failed, chmod file to 0644 and try again.
 					$wp_filesystem->chmod($to . $filename, 0644);
 					if ( ! $wp_filesystem->copy($from . $filename, $to . $filename, true, FS_CHMOD_FILE) )
 						return new WP_Error('copy_failed', __('Could not copy file.', 'themify'), $to . $filename);
 				}
-			} elseif ( 'd' == $fileinfo['type'] ) {
+			} elseif ( 'd' === $fileinfo['type'] ) {
 				if ( !$wp_filesystem->is_dir($to . $filename) ) {
 					if ( !$wp_filesystem->mkdir($to . $filename, FS_CHMOD_DIR) ) {
 						return new WP_Error('mkdir_failed', __('Could not create directory.', 'themify'), $to . $filename);
@@ -172,9 +170,9 @@ class Themify_Upgrader extends WP_Upgrader {
 		$remote_destination = $wp_filesystem->find_folder($local_destination);
 
 		//Locate which directory to copy to the new folder, This is based on the actual folder holding the files.
-		if ( 1 == count($source_files) && $wp_filesystem->is_dir( trailingslashit($source) . $source_files[0] . '/') ) //Only one folder? Then we want its contents.
+		if ( 1 === count($source_files) && $wp_filesystem->is_dir( trailingslashit($source) . $source_files[0] . '/') ) //Only one folder? Then we want its contents.
 			$source = trailingslashit($source) . trailingslashit($source_files[0]);
-		elseif ( count($source_files) == 0 )
+		elseif ( count($source_files) === 0 )
 			return new WP_Error('bad_package', $this->strings['bad_package']); //There are no files?
 		//else //Its only a single file, The upgrader will use the foldername of this file as the destination folder. foldername is based on zip filename.
 
@@ -188,7 +186,7 @@ class Themify_Upgrader extends WP_Upgrader {
 			$source_files = array_keys( $wp_filesystem->dirlist($source) );
 
 		//Protection against deleting files in any important base directories.
-		if ( in_array( $destination, array(ABSPATH, WP_CONTENT_DIR, WP_PLUGIN_DIR, WP_CONTENT_DIR . '/themes') ) ) {
+		if ( in_array( $destination, array(ABSPATH, WP_CONTENT_DIR, WP_PLUGIN_DIR, WP_CONTENT_DIR . '/themes'),true) ) {
 			$remote_destination = trailingslashit($remote_destination) . trailingslashit(basename($source));
 			$destination = trailingslashit($destination) . trailingslashit(basename($source));
 		}
@@ -218,7 +216,7 @@ class Themify_Upgrader extends WP_Upgrader {
 			$wp_filesystem->delete($remote_source, true);
 
 		$destination_name = basename( str_replace($local_destination, '', $destination) );
-		if ( '.' == $destination_name )
+		if ( '.' === $destination_name )
 			$destination_name = '';
 
 		$this->result = compact('local_source', 'source', 'source_name', 'source_files', 'destination', 'destination_name', 'local_destination', 'remote_destination', 'clear_destination', 'delete_source_dir');
@@ -249,11 +247,10 @@ class Themify_Upgrader extends WP_Upgrader {
 
 		add_filter('upgrader_pre_install', array(&$this, 'current_before'), 10, 2);
 		add_filter('upgrader_post_install', array(&$this, 'current_after'), 10, 2);
-
-		if($type == 'framework')
-			$destination = WP_CONTENT_DIR . '/themes/' . $themeName . '/themify';
-		else
-			$destination = WP_CONTENT_DIR . '/themes/' . $themeName;
+                $destination = WP_CONTENT_DIR . '/themes/' . $themeName;
+		if($type === 'framework')
+			$destination.= '/themify';
+			
 
 		$options = array(
 						'package' => $url,
@@ -261,9 +258,9 @@ class Themify_Upgrader extends WP_Upgrader {
 						'clear_destination' => true,
 						'clear_working' => true,
 						'hook_extra' => array(
-											'theme' => $themeName,
-											'type' => $type
-											)
+                                                            'theme' => $themeName,
+                                                            'type' => $type
+                                                        )
 						);
 
 		$this->run($options);
@@ -377,7 +374,7 @@ class Themify_Upgrader extends WP_Upgrader {
 			//Install Suceeded
 			$this->skin->feedback('process_success');
 			printf( esc_html__( 'Deleting transient for %s', 'themify' ), $hook_extra['type'] );
-			if($hook_extra['type'] == 'framework'){
+			if($hook_extra['type'] === 'framework'){
 				delete_transient( 'themify_new_framework' );
 				themify_set_update_cookie('framework');
 			}

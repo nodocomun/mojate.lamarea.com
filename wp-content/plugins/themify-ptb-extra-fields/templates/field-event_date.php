@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display Event Date field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-event_date.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 /* Start of old plugin data support */
 if (isset($data['dateformat'])) {
     if (!isset($data['start']['dateformat'])) {
@@ -51,7 +60,7 @@ if ($_text) {
  foreach ($dates as $k => $date): 
     if (isset($meta_data[$key][$date]) && $meta_data[$key][$date]): 
         if ($hide[$k]) {
-            $tmp = explode('@', $meta_data[$key][$date]);
+            $tmp = explode(' ', $meta_data[$key][$date]);
             $post_date = '';
             if (!$hide[$k]['date']) {
                 $post_date .= $tmp[0];
@@ -61,7 +70,7 @@ if ($_text) {
                 $post_date .= $tmp[1];
             }
         } else {
-            $post_date = str_replace('@', '', $meta_data[$key][$date]);
+            $post_date = $meta_data[$key][$date];
         }
         $strtotime = strtotime($post_date);
         $post_date = '';

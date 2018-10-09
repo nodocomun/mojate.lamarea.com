@@ -1,3 +1,286 @@
+// Sticky Plugin v1.0.4 for jQuery
+// =============
+// Author: Anthony Garand
+// Improvements by German M. Bravo (Kronuz) and Ruud Kamphuis (ruudk)
+// Improvements by Leonardo C. Daronco (daronco)
+// Created: 02/14/2011
+// Date: 07/20/2015
+// Website: http://stickyjs.com/
+// Description: Makes an element on the page stick on the screen as you scroll
+//              It will only set the 'top' and 'position' of your element, you
+//              might need to adjust the width in some cases.
+
+(function (factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery'], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        // Node/CommonJS
+        module.exports = factory(require('jquery'));
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function ($) {
+    var slice = Array.prototype.slice; // save ref to original slice()
+    var splice = Array.prototype.splice; // save ref to original slice()
+
+  var defaults = {
+      topSpacing: 0,
+      bottomSpacing: 0,
+      className: 'is-sticky',
+      wrapperClassName: 'sticky-wrapper',
+      center: false,
+      getWidthFrom: '',
+      widthFromWrapper: true, // works only when .getWidthFrom is empty
+      responsiveWidth: false
+    },
+    $window = $(window),
+    $document = $(document),
+    sticked = [],
+    windowHeight = $window.height(),
+    scroller = function() {
+      var scrollTop = $window.scrollTop(),
+        documentHeight = $document.height(),
+        dwh = documentHeight - windowHeight,
+        extra = (scrollTop > dwh) ? dwh - scrollTop : 0;
+
+      for (var i = 0, l = sticked.length; i < l; i++) {
+        var s = sticked[i],
+          elementTop = s.stickyWrapper.offset().top,
+          etse = elementTop - s.topSpacing - extra;
+
+        //update height in case of dynamic content
+        s.stickyWrapper.css('height', s.stickyElement.outerHeight());
+
+        if (scrollTop <= etse) {
+          if (s.currentTop !== null) {
+            s.stickyElement
+              .css({
+                'width': '',
+                'position': '',
+                'top': ''
+              });
+            s.stickyElement.parent().removeClass(s.className);
+            s.stickyElement.trigger('sticky-end', [s]);
+            s.currentTop = null;
+          }
+        }
+        else {
+          var newTop = documentHeight - s.stickyElement.outerHeight()
+            - s.topSpacing - s.bottomSpacing - scrollTop - extra;
+          if (newTop < 0) {
+            newTop = newTop + s.topSpacing;
+          } else {
+            newTop = s.topSpacing;
+          }
+          if (s.currentTop !== newTop) {
+            var newWidth;
+            if (s.getWidthFrom) {
+                padding =  s.stickyElement.innerWidth() - s.stickyElement.width();
+                newWidth = $(s.getWidthFrom).width() - padding || null;
+            } else if (s.widthFromWrapper) {
+                newWidth = s.stickyWrapper.width();
+            }
+            if (newWidth == null) {
+                newWidth = s.stickyElement.width();
+            }
+            s.stickyElement
+              .css('width', newWidth)
+              .css('position', 'fixed')
+              .css('top', newTop);
+
+            s.stickyElement.parent().addClass(s.className);
+
+            if (s.currentTop === null) {
+              s.stickyElement.trigger('sticky-start', [s]);
+            } else {
+              // sticky is started but it have to be repositioned
+              s.stickyElement.trigger('sticky-update', [s]);
+            }
+
+            if (s.currentTop === s.topSpacing && s.currentTop > newTop || s.currentTop === null && newTop < s.topSpacing) {
+              // just reached bottom || just started to stick but bottom is already reached
+              s.stickyElement.trigger('sticky-bottom-reached', [s]);
+            } else if(s.currentTop !== null && newTop === s.topSpacing && s.currentTop < newTop) {
+              // sticky is started && sticked at topSpacing && overflowing from top just finished
+              s.stickyElement.trigger('sticky-bottom-unreached', [s]);
+            }
+
+            s.currentTop = newTop;
+          }
+
+          // Check if sticky has reached end of container and stop sticking
+          var stickyWrapperContainer = s.stickyWrapper.parent();
+          var unstick = (s.stickyElement.offset().top + s.stickyElement.outerHeight() >= stickyWrapperContainer.offset().top + stickyWrapperContainer.outerHeight()) && (s.stickyElement.offset().top <= s.topSpacing);
+
+          if( unstick ) {
+            s.stickyElement
+              .css('position', 'absolute')
+              .css('top', '')
+              .css('bottom', 0);
+          } else {
+            s.stickyElement
+              .css('position', 'fixed')
+              .css('top', newTop)
+              .css('bottom', '');
+          }
+        }
+      }
+    },
+    resizer = function() {
+      windowHeight = $window.height();
+
+      for (var i = 0, l = sticked.length; i < l; i++) {
+        var s = sticked[i];
+        var newWidth = null;
+        if (s.getWidthFrom) {
+            if (s.responsiveWidth) {
+                newWidth = $(s.getWidthFrom).width();
+            }
+        } else if(s.widthFromWrapper) {
+            newWidth = s.stickyWrapper.width();
+        }
+        if (newWidth != null) {
+            s.stickyElement.css('width', newWidth);
+        }
+      }
+    },
+    methods = {
+      init: function(options) {
+        return this.each(function() {
+          var o = $.extend({}, defaults, options);
+          var stickyElement = $(this);
+
+          var stickyId = stickyElement.attr('id');
+          var wrapperId = stickyId ? stickyId + '-' + defaults.wrapperClassName : defaults.wrapperClassName;
+          var wrapper = $('<div></div>')
+            .attr('id', wrapperId)
+            .addClass(o.wrapperClassName);
+
+          stickyElement.wrapAll(function() {
+            if ($(this).parent("#" + wrapperId).length == 0) {
+                    return wrapper;
+            }
+});
+
+          var stickyWrapper = stickyElement.parent();
+
+          if (o.center) {
+            stickyWrapper.css({width:stickyElement.outerWidth(),marginLeft:"auto",marginRight:"auto"});
+          }
+
+          if (stickyElement.css("float") === "right") {
+            stickyElement.css({"float":"none"}).parent().css({"float":"right"});
+          }
+
+          o.stickyElement = stickyElement;
+          o.stickyWrapper = stickyWrapper;
+          o.currentTop    = null;
+
+          sticked.push(o);
+
+          methods.setWrapperHeight(this);
+          methods.setupChangeListeners(this);
+        });
+      },
+
+      setWrapperHeight: function(stickyElement) {
+        var element = $(stickyElement);
+        var stickyWrapper = element.parent();
+        if (stickyWrapper) {
+          stickyWrapper.css('height', element.outerHeight());
+        }
+      },
+
+      setupChangeListeners: function(stickyElement) {
+        if (window.MutationObserver) {
+          var mutationObserver = new window.MutationObserver(function(mutations) {
+            if (mutations[0].addedNodes.length || mutations[0].removedNodes.length) {
+              methods.setWrapperHeight(stickyElement);
+            }
+          });
+          mutationObserver.observe(stickyElement, {subtree: true, childList: true});
+        } else {
+          if (window.addEventListener) {
+            stickyElement.addEventListener('DOMNodeInserted', function() {
+              methods.setWrapperHeight(stickyElement);
+            }, false);
+            stickyElement.addEventListener('DOMNodeRemoved', function() {
+              methods.setWrapperHeight(stickyElement);
+            }, false);
+          } else if (window.attachEvent) {
+            stickyElement.attachEvent('onDOMNodeInserted', function() {
+              methods.setWrapperHeight(stickyElement);
+            });
+            stickyElement.attachEvent('onDOMNodeRemoved', function() {
+              methods.setWrapperHeight(stickyElement);
+            });
+          }
+        }
+      },
+      update: scroller,
+      unstick: function(options) {
+        return this.each(function() {
+          var that = this;
+          var unstickyElement = $(that);
+
+          var removeIdx = -1;
+          var i = sticked.length;
+          while (i-- > 0) {
+            if (sticked[i].stickyElement.get(0) === that) {
+                splice.call(sticked,i,1);
+                removeIdx = i;
+            }
+          }
+          if(removeIdx !== -1) {
+            unstickyElement.unwrap();
+            unstickyElement
+              .css({
+                'width': '',
+                'position': '',
+                'top': '',
+                'float': ''
+              })
+            ;
+          }
+        });
+      }
+    };
+
+  // should be more efficient than using $window.scroll(scroller) and $window.resize(resizer):
+  if (window.addEventListener) {
+    window.addEventListener('scroll', scroller, false);
+    window.addEventListener('resize', resizer, false);
+  } else if (window.attachEvent) {
+    window.attachEvent('onscroll', scroller);
+    window.attachEvent('onresize', resizer);
+  }
+
+  $.fn.sticky = function(method) {
+    if (methods[method]) {
+      return methods[method].apply(this, slice.call(arguments, 1));
+    } else if (typeof method === 'object' || !method ) {
+      return methods.init.apply( this, arguments );
+    } else {
+      $.error('Method ' + method + ' does not exist on jQuery.sticky');
+    }
+  };
+
+  $.fn.unstick = function(method) {
+    if (methods[method]) {
+      return methods[method].apply(this, slice.call(arguments, 1));
+    } else if (typeof method === 'object' || !method ) {
+      return methods.unstick.apply( this, arguments );
+    } else {
+      $.error('Method ' + method + ' does not exist on jQuery.sticky');
+    }
+  };
+  $(function() {
+    setTimeout(scroller, 0);
+  });
+}));
+
 /**
  * Tabify
  */
@@ -11,26 +294,46 @@
             var tabs = $(this);
             if (!tabs.data('tabify')) {
                 tabs.data('tabify', true);
-                $('ul.tab-nav:first li:first', tabs).addClass('current');
-                $('div:first', tabs).show();
-                var tabLinks = $('ul.tab-nav:first li', tabs);
-                $(tabLinks).click(function () {
+                $('.tab-nav:first li', tabs).click(function () {  
                     $(this).addClass('current').attr('aria-expanded', 'true').siblings().removeClass('current').attr('aria-expanded', 'false');
-                    $('ul.tab-nav:first', tabs).siblings('.tab-content').hide().attr('aria-hidden', 'true');
+                    $(this).closest('.module-tab').find('.tab-nav-current-active').text($(this).text());
                     var activeTab = $(this).find('a').attr('href');
-                    $(activeTab).show().attr('aria-hidden', 'false').trigger('resize');
-                    $('body').trigger('tb_tabs_switch', [activeTab, tabs]);
-                    Themify.triggerEvent(window, 'resize');
+                    $(activeTab,tabs).attr('aria-hidden', 'false').trigger('resize').siblings('.tab-content').attr('aria-hidden', 'true');
+                    Themify.body.trigger('tb_tabs_switch', [activeTab, tabs]);
+                    if(!Themify.is_builder_active){
+                        Themify.triggerEvent(window, 'resize');
+                    }
+					$(this).closest('.module-tab').find('.tab-nav-current-active').click();
                     return false;
-                });
-                $('ul.tab-nav:first', tabs).siblings('.tab-content').find('a[href^="#tab-"]').on('click', function (event) {
-                    event.preventDefault();
+                }).first().addClass('current');
+                $('.tab-nav:first', tabs).siblings('.tab-content').find('a[href^="#tab-"]').on('click', function (e) {
+                  
+                    e.preventDefault();
                     var dest = $(this).prop('hash').replace('#tab-', ''),
-                            contentID = $('ul.tab-nav:first', tabs).siblings('.tab-content').eq(dest - 1).prop('id');
+                        contentID = $('.tab-nav:first', tabs).siblings('.tab-content').eq(dest - 1).prop('id');
                     if ($('a[href^="#' + contentID + '"]').length > 0) {
                         $('a[href^="#' + contentID + '"]').trigger('click');
                     }
                 });
+                $('.tab-nav-current-active', tabs).click( function () {
+                	var $this = $(this);
+					if( $this.hasClass('clicked') ){
+						$this.removeClass('clicked')
+					}else{
+
+
+						if ( ( $this.position().left > 0 ) && ( $this.position().left <= $this.closest('.module-tab').width() / 2 ) ) {
+							$this.next('.tab-nav').removeClass('right-align').addClass('center-align');
+						}else if(  $this.position().left > $this.closest('.module-tab').width() / 2  ){
+							$this.next('.tab-nav').removeClass('center-align').addClass('right-align');
+						}else{
+							$this.next('.tab-nav').removeClass('center-align right-align')
+						}
+						$this.addClass('clicked');
+
+					}
+				});
+
             }
         });
     };
@@ -144,12 +447,11 @@
                 }
                 this.element.css({
                     backgroundSize: 'auto ' + Math.round(outerHeight + (dynamicDifference * 2)) + 'px',
-                    backgroundPosition: this.options.xpos + ' ' + Math.round(((this.top - pos) * this.options.speedFactor) - dynamicDifference) + 'px'
+                    'background-position-y': Math.round(((this.top - pos) * this.options.speedFactor) - dynamicDifference) + 'px'
                 });
             }
             else {
-
-                this.element.css('backgroundPosition', this.options.xpos + ' ' + Math.round((this.top - pos) * this.options.speedFactor) + 'px');
+                this.element.css('background-position-y', Math.round((this.top - pos) * this.options.speedFactor) + 'px');
             }
         }
     };
@@ -161,7 +463,6 @@
     };
 })(jQuery, window);
 
-
 var ThemifyBuilderModuleJs;
 (function ($, window, document, undefined) {
 
@@ -171,6 +472,7 @@ var ThemifyBuilderModuleJs;
         wow: null,
         is_mobile: null,
         fwvideos: [], // make it accessible to public
+		resized:0,
         init: function () {
             this.bindEvents();
         },
@@ -185,22 +487,30 @@ var ThemifyBuilderModuleJs;
             } else {
                 $(window).load(this.window_load);
             }
-            
+
+            if ( window.onresize ){
+            	this.window_resize()
+			}else{
+            	$(window).resize( this.window_resize );
+			}
+
         },
         /**
          * Executed on jQuery's document.ready() event.
          */
         document_ready: function () {
             var self = ThemifyBuilderModuleJs;
-                self.setupBodyClasses();
+            self.setupBodyClasses();
+            self.pageBreakPagination();
             $.event.trigger('themify_builder_loaded');
-            if (tbLocalScript.fullwidth_support === ''){
-                $(window).on('tfsmartresize.tbfullwidth', function(e){
+            if (tbLocalScript.fullwidth_support === '') {
+                $(window).on('tfsmartresize.tbfullwidth', function (e) {
                     self.setupFullwidthRows();
                 });
             }
+            self.tabsClick();
             if (!Themify.is_builder_active) {
-                if (tbLocalScript.fullwidth_support === ''){
+                if (tbLocalScript.fullwidth_support === '') {
                     self.setupFullwidthRows();
                 }
                 self.GridBreakPoint();
@@ -208,20 +518,22 @@ var ThemifyBuilderModuleJs;
                     self.wowInit();
                 }
                 self.carousel();
-                self.InitScrollHighlight();
-                self.accordion();
                 self.touchdropdown();
                 self.tabs();
                 self.onInfScr();
                 self.menuModuleMobileStuff();
                 self.playFocusedVideoBg();
-                self.showcaseGallery();
-                self.galleryPagination();
+                self.alertModule();
                 $(window).on('hashchange', this.tabsDeepLink);
             }
-            $(window).on('tfsmartresize.tblink', function(){
+            $(window).on('tfsmartresize.tblink', function () {
                 self.menuModuleMobileStuff(true);
             });
+            self.InitScrollHighlight();
+            self.showcaseGallery();
+			self.sliderGallery();
+            self.readMoreLink();
+            self.galleryPagination();
         },
         /**
          * Executed on JavaScript 'load' window event.
@@ -229,22 +541,44 @@ var ThemifyBuilderModuleJs;
         window_load: function () {
             var self = ThemifyBuilderModuleJs;
             window.loaded = true;
-            if (!Themify.is_builder_active) {
+            self.galleryMasonry();
+			if (!Themify.is_builder_active) {
                 self.parallaxScrollingInit();
                 self.charts();
                 self.fullwidthVideo();
                 self.backgroundSlider();
                 self.backgroundZoom();
                 self.backgroundZooming();
+                self.stickyElementInit();
                 if (tbLocalScript.isParallaxActive) {
                     self.backgroundScrolling();
                 }
-                if (self._isTouch()) {
-                    self.fullheight();
-                }
                 self.tabsDeepLink();
             }
+            else{
+                self.wowApplyOnHover();
+            }
+            self.accordion();
         },
+		window_resize:function () {
+
+			clearTimeout(this.resized);
+			this.resized = setTimeout(function () {
+
+				var windowWidth = window.innerWidth;
+
+				$('.module-tab[data-tab-breakpoint]').each(function () {
+					if( parseInt( $(this).attr('data-tab-breakpoint') ) >= windowWidth ){
+						$(this).addClass('responsive-tab-style');
+					}else{
+						$(this).removeClass('responsive-tab-style');
+						$(this).find('.tab-nav').removeClass('right-align center-align');
+					}
+				});
+
+
+			}, 200);
+		},
         wowInit: function (callback, resync) {
             var self = ThemifyBuilderModuleJs;
             if (resync && self.wow) {
@@ -258,9 +592,10 @@ var ThemifyBuilderModuleJs;
                     if (typeof self.wow.__proto__ !== 'undefined') {
                         self.wow.__proto__.applyStyle = function (box, hidden) {
                             var duration = box.getAttribute('data-wow-duration'),
-                                iteration = box.getAttribute('class').match(/animation_effect_repeat_(\d*)/),
-                                delay = box.getAttribute('class').match(/animation_effect_delay_((?:\d+\.?\d*|\.\d+))/);
-                            if (null !== delay){
+                                cl = box.getAttribute('class'),
+                                iteration = cl.match(/animation_effect_repeat_(\d*)/),
+                                delay = cl.match(/animation_effect_delay_((?:\d+\.?\d*|\.\d+))/);
+                            if (null !== delay) {
                                 delay = delay[1] + 's';
                             }
                             if (null !== iteration)
@@ -273,36 +608,53 @@ var ThemifyBuilderModuleJs;
                         };
                     }
                 }
-
-                if (themify_vars.TB) {
-                    ThemifyBuilderModuleJs.animationOnScroll(resync);
-                }
+                self.animationOnScroll(resync);
                 self.wow = new WOW({
                     live: true,
                     offset: typeof tbLocalScript !== 'undefined' && tbLocalScript ? parseInt(tbLocalScript.animationOffset) : 100
                 });
                 self.wow.init();
                 wowDuckPunch();
+                if(!Themify.is_builder_active){
+                    self.wowApplyOnHover();
+                }
             }
             callback = callback || wowCallback;
-            if (typeof tbLocalScript !== 'undefined'
-                    && typeof tbLocalScript.animationInviewSelectors !== 'undefined'
-                    && $(tbLocalScript.animationInviewSelectors.toString()).length) {
-                if (!ThemifyBuilderModuleJs.wow) {
+			if (typeof tbLocalScript !== 'undefined'
+				&& typeof tbLocalScript.animationInviewSelectors !== 'undefined'
+				&& ( $(tbLocalScript.animationInviewSelectors.toString()).length || $('.hover-wow').length ) ){
+				if (!self.wow) {
                     Themify.LoadCss(tbLocalScript.builder_url + '/css/animate.min.css', null, null, null, function () {
                         Themify.LoadAsync(themify_vars.url + '/js/wow.min.js', callback, null, null, function () {
-                            return (ThemifyBuilderModuleJs.wow);
+                            return (self.wow);
                         });
                     });
                 }
                 else {
                     callback();
-                    return (ThemifyBuilderModuleJs.wow);
+                    return (self.wow);
                 }
             }
         },
+        wowApplyOnHover:function () {
+                var is_working = false;
+                $(document).off('mouseenter','.hover-wow').on('mouseenter','.hover-wow',function () {
+                    if(is_working===false){
+                        is_working = true;
+                        var hoverAnimation = this.getAttribute('class').match(/hover-animation-(\w*)/),
+                            animation = this.style.animationName;
+                        if( '' != animation ){
+                            $(this).css('animation-name','').removeClass( animation );
+                        }
+                        $(this).one('animationend webkitAnimationEnd',function(){
+                            $(this).removeClass('animated ' + hoverAnimation[1]);
+                            is_working = false;
+                        }).addClass('animated ' + hoverAnimation[1]);
+                    }
+                });
+        },
         setupFullwidthRows: function (el) {
-            if(tbLocalScript.fullwidth_support !== ''){
+            if (tbLocalScript.fullwidth_support !== '') {
                 return;
             }
             if (!el) {
@@ -326,86 +678,87 @@ var ThemifyBuilderModuleJs;
                 el = el.get();
             }
             var container = $(tbLocalScript.fullwidth_container),
-                outherWith = container.outerWidth(),
-                outherLeft = container.offset().left;
+                    outherWith = container.outerWidth(),
+                    outherLeft = container.offset().left;
             if (outherWith === 0) {
                 return;
             }
             var styleId = 'tb-fulllwidth-styles',
-                style = '',
-                tablet = tbLocalScript.breakpoints.tablet,
-                tablet_landscape = tbLocalScript.breakpoints.tablet_landscape,
-                mobile = tbLocalScript.breakpoints.mobile,
-                arr = ['mobile','tablet','tablet_landscape','desktop'],
-                width = $(window).width(),
-                type = 'desktop';
-                if (width <= mobile) {
-                    type = 'mobile';
-                }
-                else if (width <= tablet[1]) {
-                    type = 'tablet';
-                }
-                else if (width <= tablet_landscape[1]) {
-                    type = 'tablet_landscape';
-                }
-                function getCurrentValue(prop){
-                    var val = $this.data(type+'-'+prop);
-                        if(val===undefined){
-                            if(type!=='destop'){
-                                for(var i =arr.indexOf(type)+1;i<4;++i ){
-                                    if(arr[i]!==undefined){
-                                        val = $this.data(arr[i]+'-'+prop);
-                                        if(val!==undefined){
-                                            $this.data(type+'-'+prop,val);
-                                            break;
-                                        }
-                                    }
+                    style = '',
+                    tablet = tbLocalScript.breakpoints.tablet,
+                    tablet_landscape = tbLocalScript.breakpoints.tablet_landscape,
+                    mobile = tbLocalScript.breakpoints.mobile,
+                    arr = ['mobile', 'tablet', 'tablet_landscape', 'desktop'],
+                    width = $(window).width(),
+                    type = 'desktop';
+            if (width <= mobile) {
+                type = 'mobile';
+            }
+            else if (width <= tablet[1]) {
+                type = 'tablet';
+            }
+            else if (width <= tablet_landscape[1]) {
+                type = 'tablet_landscape';
+            }
+            function getCurrentValue(prop) {
+                var val = $this.data(type + '-' + prop);
+                if (val === undefined) {
+                    if (type !== 'desktop') {
+                        for (var i = arr.indexOf(type) + 1; i < 4; ++i) {
+                            if (arr[i] !== undefined) {
+                                val = $this.data(arr[i] + '-' + prop);
+                                if (val !== undefined) {
+                                    $this.data(type + '-' + prop, val);
+                                    break;
                                 }
                             }
                         }
-                        return val !== undefined ? val.split(',') : [];
+                    }
                 }
+                return val !== undefined ? val.split(',') : [];
+            }
             for (var i = 0, len = el.length; i < len; ++i) {
                 var $this = $(el[i]),
-                    row = $this.closest('.themify_builder_content'),
-                    left = row.offset().left - outherLeft,
-                    right = outherWith - left - row.outerWidth();
-                    
+                        row = $this.closest('.themify_builder_content'),
+                        left = row.offset().left - outherLeft,
+                        right = outherWith - left - row.outerWidth();
+
                 // set to zero when zoom is enabled
-                if (row.hasClass('themify_builder_zooming_50') || row.hasClass('themify_builder_zooming_75')) {
+                if (row.hasClass('tb_zooming_50') || row.hasClass('tb_zooming_75')) {
                     left = 0;
                     right = 0;
                 }
-                if(!Themify.is_builder_active){
-                    style+= '.themify_builder.themify_builder_content .themify_builder_' + row.data('postid') + '_row.module_row_'+$this.index()+'.module_row{';
+                if (!Themify.is_builder_active) {
+                    var index = $this.attr('class').match(/module_row_(\d+)/)[1];
+                    style += '.themify_builder.themify_builder_content .themify_builder_' + row.data('postid') + '_row.module_row_' + index + '.module_row{';
                 }
                 if (el[i].classList.contains('fullwidth')) {
                     var margin = getCurrentValue('margin'),
-                        sum = '';
-                        if (margin[0]) {
-                            sum=margin[0];
-                            style += 'margin-left:calc(' + margin[0] + ' - ' + Math.abs(left) + 'px);';
+                            sum = '';
+                    if (margin[0]) {
+                        sum = margin[0];
+                        style += 'margin-left:calc(' + margin[0] + ' - ' + Math.abs(left) + 'px);';
+                    }
+                    else {
+                        style += 'margin-left:' + (-left) + 'px;';
+                    }
+                    if (margin[1]) {
+                        if (sum !== '') {
+                            sum += ' + ';
                         }
-                        else {
-                            style += 'margin-left:' + (-left) + 'px;';
-                        }
-                        if (margin[1]) {
-                            if(sum!==''){
-                                sum+=' + ';
-                            }
-                            sum+=margin[1];
-                            style += 'margin-right:calc(' + margin[1] + ' - ' + Math.abs(right) + 'px);';
-                        }
-                        else {
-                            style += 'margin-right:' + (-right) + 'px;';
-                        }
-                        style +=sum!==''?'width:calc(' + outherWith+'px - ('+sum + '));':'width:' + outherWith + 'px;';
+                        sum += margin[1];
+                        style += 'margin-right:calc(' + margin[1] + ' - ' + Math.abs(right) + 'px);';
+                    }
+                    else {
+                        style += 'margin-right:' + (-right) + 'px;';
+                    }
+                    style += sum !== '' ? 'width:calc(' + outherWith + 'px - (' + sum + '));' : 'width:' + outherWith + 'px;';
                 }
-                else{
+                else {
                     style += 'margin-left:' + (-left) + 'px;margin-right:' + (-right) + 'px;width:' + outherWith + 'px;';
-                    if(left || right){
+                    if (left || right) {
                         var padding = getCurrentValue('padding'),
-                            sign = '+';
+                                sign = '+';
                         if (left) {
                             if (padding[0]) {
                                 if (left < 0) {
@@ -428,17 +781,17 @@ var ThemifyBuilderModuleJs;
                         }
                     }
                 }
-                
-                if(Themify.is_builder_active){
+
+                if (Themify.is_builder_active) {
                     el[i].style['paddingRight'] = el[i].style['paddingLeft'] = el[i].style['marginRight'] = el[i].style['marginLeft'] = '';
-                    el[i].style.cssText+=style;
+                    el[i].style.cssText += style;
                     style = '';
                 }
-                else{
+                else {
                     style += '}';
                 }
             }
-            if(!Themify.is_builder_active){
+            if (!Themify.is_builder_active) {
                 style = '<style id="' + styleId + '" type="text/css">' + style + '</style>';
                 $('#' + styleId).remove();
                 document.getElementsByTagName('head')[0].insertAdjacentHTML('beforeend', style);
@@ -453,7 +806,7 @@ var ThemifyBuilderModuleJs;
                 var i = -1 !== l.indexOf("?") ? "&" : "?";
                 return r = l.split("#"), l = r[0] + i + e + "=" + n, 'undefined' !== typeof r[1] && null !== r[1] && (l += "#" + r[1]), l
             }
-            return l
+            return l;
         },
         onInfScr: function () {
             var self = ThemifyBuilderModuleJs;
@@ -474,84 +827,136 @@ var ThemifyBuilderModuleJs;
             });
         },
         InitScrollHighlight: function () {
-            if (tbLocalScript.loadScrollHighlight == true && $('div[class*=tb_section-]').length > 0) {
-                Themify.LoadAsync(tbLocalScript.builder_url + '/js/themify.scroll-highlight.js', this.ScrollHighlightCallBack, null, null, function () {
+            if (tbLocalScript.loadScrollHighlight == true && (Themify.is_builder_active || $('div[class*=tb_section-]').length > 0)) {
+                Themify.LoadAsync(tbLocalScript.builder_url + '/js/themify.scroll-highlight.js', function(){
+					Themify.body.themifyScrollHighlight( tbScrollHighlight ? tbScrollHighlight : {});
+					
+                    }, null, null, function () {
                     return('undefined' !== typeof $.fn.themifyScrollHighlight);
                 });
             }
         },
-        ScrollHighlightCallBack: function () {
-            $('body').themifyScrollHighlight(themifyScript.scrollHighlight ? themifyScript.scrollHighlight : {});
-        },
         // Row, col, sub-col, sub_row: Background Slider
-       backgroundSlider: function ($bgSlider) {
-            $bgSlider = $bgSlider || $('.row-slider, .column-slider, .subrow-slider');
-                        function callBack() {
-					var themifySectionVars = {
-						autoplay: tbLocalScript.backgroundSlider.autoplay,
-						speed: tbLocalScript.backgroundSlider.speed
-					};
-					// Parse injected vars
-					themifySectionVars.autoplay = parseInt(themifySectionVars.autoplay, 10);
-					if (themifySectionVars.autoplay <= 10) {
-						themifySectionVars.autoplay *= 1000;
-					}
-					themifySectionVars.speed = parseInt(themifySectionVars.speed, 10);
-					// Initialize slider
-					$bgSlider.each(function () {
-						var $thisRowSlider = $(this),
-							$backel = $thisRowSlider.parent(),
-							rsImages = [],
-							rsImagesAlt = [],
-							bgMode = $thisRowSlider.data('bgmode');
+        backgroundSlider: function ($bgSlider) {
+            $bgSlider = $bgSlider || $('.row-slider, .column-slider, .subrow-slider, .sub_column-slider');
+            function callBack() {
+                var themifySectionVars = {
+                    autoplay: tbLocalScript.backgroundSlider.autoplay
+                };
+                // Parse injected vars
+                themifySectionVars.autoplay = parseInt(themifySectionVars.autoplay, 10);
+                if (themifySectionVars.autoplay <= 10) {
+                    themifySectionVars.autoplay *= 1000;
+                }
+                // Initialize slider
+                $bgSlider.each(function () {
+                    var $thisRowSlider = $(this),
+						$backel = $thisRowSlider.parent(),
+						rsImages = [],
+						rsImagesAlt = [],
+						imagesCount,
+						bgMode = $thisRowSlider.data('bgmode'),
+						speed = $thisRowSlider.data('sliderspeed');
 
-						// Initialize images array with URLs
-						$thisRowSlider.find('li').each( function () {
-							rsImages.push( $(this).attr( 'data-bg' ) );
-							rsImagesAlt.push( $(this).attr( 'data-bg-alt' ) );
+                    // Initialize images array with URLs
+                    $thisRowSlider.find('li').each(function () {
+                        rsImages.push($(this).attr('data-bg'));
+                        rsImagesAlt.push($(this).attr('data-bg-alt'));
+                    });
+
+					imagesCount = ( rsImages.length > 4 ) ? 4 : rsImages.length;
+
+					// Call backstretch for the first time
+                    $backel.tb_backstretch(rsImages, {
+                        speed: parseInt( speed ),
+                        duration: themifySectionVars.autoplay,
+                        mode: bgMode
+                    });
+                    rsImages = null;
+
+                    // Cache Backstretch object
+                    var thisBGS = $backel.data('tb_backstretch');
+
+                    // Previous and Next arrows
+                    $thisRowSlider.find('.row-slider-prev,.row-slider-next').on('click', function (e) {
+                        e.preventDefault();
+                        if ($(this).hasClass('row-slider-prev')) {
+                            thisBGS.prev();
+                        }
+                        else {
+                            thisBGS.next();
+                        }
+                    });
+
+                    // Dots
+                    $thisRowSlider.find('.row-slider-dot').on('click', function () {
+                        thisBGS.show($(this).data('index'));
+                    });
+
+                    // Active Dot
+                    var sliderDots = $thisRowSlider.find( '.row-slider-slides > li' ),
+                            currentClass = 'row-slider-dot-active';
+
+                    if( sliderDots.length ) {
+						sliderDots.eq( 0 ).addClass( currentClass );
+
+						$thisRowSlider.parent().on( 'tb_backstretch.show', function( e, data ) {
+							var currentDot = sliderDots.eq( thisBGS.index );
+
+							if( currentDot.length ) {
+								sliderDots.removeClass( currentClass );
+								currentDot.addClass( currentClass );
+							}
 						} );
+                    }
 
-						// Call backstretch for the first time
-						$backel.tb_backstretch(rsImages, {
-							speed: themifySectionVars.speed,
-							duration: themifySectionVars.autoplay,
-							mode: bgMode
-						});
-						rsImages = null;
-						
-						// Cache Backstretch object
-						var thisBGS = $backel.data('backstretch');
+                    if ($thisRowSlider.attr('data-bgmode') === 'kenburns-effect') {
 
-						// Previous and Next arrows
-						$thisRowSlider.find('.row-slider-prev,.row-slider-next').on('click', function (e) {
-							e.preventDefault();
-							if ($(this).hasClass('row-slider-prev')) {
-								thisBGS.prev();
+						var lastIndex,
+							kenburnsActive = 0,
+							createKenburnIndex = function(){
+								return (kenburnsActive + 1 > imagesCount) ? kenburnsActive = 1 : ++kenburnsActive;
+							};
+
+						$thisRowSlider.parent().on('tb_backstretch.before', function (e, data) {
+
+							setTimeout(function () {
+
+								if (lastIndex != data.index) {
+									var $img = data.$wrap.find('img').last();
+									$img.addClass('kenburns-effect' + createKenburnIndex());
+									lastIndex = data.index;
+								}
+
+							}, 50);
+
+						}).on('tb_backstretch.after', function (e, data) {
+
+							var $img = data.$wrap.find('img').last(),
+									expr = /kenburns-effect\d/;
+							if (!expr.test($img.attr('class'))) {
+									$img.addClass('kenburns-effect' + createKenburnIndex());
+									lastIndex = data.index;
 							}
-							else {
-								thisBGS.next();
-							}
+
 						});
 
-						// Dots
-						$thisRowSlider.find('.row-slider-dot').on('click',function () {
-							thisBGS.show($(this).data('index'));
-						});
-						
-						// Add alt tag
-						$( window ).on( 'backstretch.before backstretch.show', function ( e, instance, index ) {
-							// Needed for col styling icon and row grid menu to be above row and sub-row top bars.
-							if (Themify.is_builder_active) {
-								$backel.css('zIndex', 0);
-							}
-							if ( rsImagesAlt[ index ] !== undefined ) {
-								setTimeout( function() {
-									instance.$wrap.find( 'img:not(.deleteable)' ).attr( 'alt', rsImagesAlt[ index ] );
-								},1 );
-							}
-						} );
-					});
-			}
+                    }
+
+					// Add alt tag
+                    $(window).on('backstretch.before backstretch.show', function (e, instance, index) {
+                        // Needed for col styling icon and row grid menu to be above row and sub-row top bars.
+                        if (Themify.is_builder_active) {
+                            $backel.css('zIndex', 0);
+                        }
+                        if (rsImagesAlt[ index ] !== undefined) {
+                            setTimeout(function () {
+                                instance.$wrap.find('img:not(.deleteable)').attr('alt', rsImagesAlt[ index ]);
+                            }, 1);
+                        }
+                    });
+                });
+            }
             if ($bgSlider.length > 0) {
                 Themify.LoadAsync(
                         themify_vars.url + '/js/backstretch.themify-version.js',
@@ -566,62 +971,81 @@ var ThemifyBuilderModuleJs;
         },
         // Row: Fullwidth video background
         fullwidthVideo: function ($videoElm, parent) {
-            if (this._isMobile()) {
-                $('.big-video-wrap').remove();
-                return;
+            if ($videoElm) {
+                $videoElm = $videoElm.data('fullwidthvideo')? $videoElm : $('[data-fullwidthvideo]', $videoElm);
             }
-            if(!parent){
-                parent = $('.themify_builder');
-            }
+
+            parent = parent || $('.themify_builder');
             $videoElm = $videoElm || $('[data-fullwidthvideo]', parent);
+
             if ($videoElm.length > 0) {
-                var self = this,
-                        $is_youtube = [],
-                        $is_vimeo = [],
-                        $is_local = [];
                 
-                $videoElm.each( function (i) {
+                var self = this,
+                    is_mobile = this._isMobile(),
+                    is_youtube = [],
+                    is_vimeo = [],
+                    is_local = [];
+
+                $videoElm.each(function (i) {
                     var $video = $(this),
                         url = $video.data('fullwidthvideo');
                     if (!url) {
                         return true;
                     }
+
                     $video.children('.big-video-wrap').remove();
                     var provider = Themify.parseVideo(url);
                     if (provider.type === 'youtube') {
-                        if (provider.id) {
-                            $is_youtube.push({'el': $video, 'id': provider.id});
+                        if (!is_mobile && provider.id) {
+                            is_youtube.push({'el': $video, 'id': provider.id});
                         }
-                    }
+                    } 
                     else if (provider.type === 'vimeo') {
-                        if (provider.id) {
-                            $is_vimeo.push({'el': $video, 'id': provider.id});
+                        if (!is_mobile && provider.id) {
+                            is_vimeo.push({'el': $video, 'id': provider.id});
                         }
-                    }
-                    else {
-                        $is_local.push($video);
+                    } else {
+                        is_local.push($video);
                     }
                 });
-
-                if ($is_local.length > 0) {
-                    Themify.LoadAsync(
-                            themify_vars.url + '/js/bigvideo.js',
-                            function () {
-                                self.fullwidthVideoCallBack($is_local);
-                            },
-                            null,
-                            null,
-                            function () {
-                                return ('undefined' !== typeof $.fn.ThemifyBgVideo);
-                            }
-                    );
+                $videoElm = null;
+                if (is_local.length > 0) {
+                    if(!is_mobile){
+                        Themify.LoadAsync(
+                                themify_vars.url + '/js/bigvideo.js',
+                                function () {
+                                    self.fullwidthVideoCallBack(is_local);
+                                    is_local = null;
+                                },
+                                null,
+                                null,
+                                function () {
+                                    return ('undefined' !== typeof $.fn.ThemifyBgVideo);
+                                }
+                        );
+                    }
+                    else{
+                        for(var i=0,len=is_local.length;i<len;++i){
+                           var videoURL = is_local[i].data('fullwidthvideo');
+							if ( 'play' == is_local[i].data('playonmobile') ) {
+								var id = Themify.hash(i + '-' + videoURL),
+									videoEl = '<div class="big-video-wrap">'
+										+ '<video class="video-' + id + '" muted="true" autoplay="true" loop="true" playsinline="true" >' +
+										'<source src="' + videoURL + '" type="video/mp4">' +
+										'</video></div>';
+								is_local[i][0].insertAdjacentHTML('afterbegin', videoEl);
+							}
+                       }
+                       is_local = null;
+                   }
                 }
 
-                if ($is_vimeo.length > 0) {
+                if (is_vimeo.length > 0) {
                     Themify.LoadAsync(
                             tbLocalScript.builder_url + '/js/froogaloop.min.js',
                             function () {
-                                self.fullwidthVimeoCallBack($is_vimeo);
+                                self.fullwidthVimeoCallBack(is_vimeo);
+                                is_vimeo = null;
                             },
                             null,
                             null,
@@ -630,12 +1054,13 @@ var ThemifyBuilderModuleJs;
                             }
                     );
                 }
-                if ($is_youtube.length > 0) {
+                if (is_youtube.length > 0) {
                     if (!$.fn.ThemifyYTBPlayer) {
                         Themify.LoadAsync(
                                 tbLocalScript.builder_url + '/js/themify-youtube-bg.js',
                                 function () {
-                                    self.fullwidthYoutobeCallBack($is_youtube);
+                                    self.fullwidthYoutobeCallBack(is_youtube);
+                                    is_youtube = null;
                                 },
                                 null,
                                 null,
@@ -643,42 +1068,37 @@ var ThemifyBuilderModuleJs;
                                     return typeof $.fn.ThemifyYTBPlayer !== 'undefined';
                                 }
                         );
+                    } else {
+                        self.fullwidthYoutobeCallBack(is_youtube);
                     }
-                    else {
-                        self.fullwidthYoutobeCallBack($is_youtube);
-                    }
-
                 }
             }
-
         },
         videoParams: function ($el) {
             var mute = 'mute' === $el.data('mutevideo'),
-                loop = 'undefined' !== typeof $el.data('unloopvideo') ? 'loop' === $el.data('unloopvideo') : 'yes' === tbLocalScript.backgroundVideoLoop;
+                    loop = 'undefined' !== typeof $el.data('unloopvideo') ? 'loop' === $el.data('unloopvideo') : 'yes' === tbLocalScript.backgroundVideoLoop;
 
             return {'mute': mute, 'loop': loop};
         },
         // Row: Fullwidth video background
         fullwidthVideoCallBack: function ($videos) {
-            var self = ThemifyBuilderModuleJs;
-            $.each($videos, function (i, elm) {
-                var $video = $(elm),
-                    videoURL = $video.data('fullwidthvideo'),
+            for(var i=0,len=$videos.length;i<len;++i){
+                  var videoURL = $videos[i].data('fullwidthvideo'),
                     hash = Themify.hash(i + '-' + videoURL);
-                var params = self.videoParams($video);
-                $video.ThemifyBgVideo({
+                var params = ThemifyBuilderModuleJs.videoParams($videos[i]);
+                $videos[i].ThemifyBgVideo({
                     url: videoURL,
                     doLoop: params.loop,
                     ambient: params.mute,
                     id: hash
                 });
-            });
+            }
         },
         fullwidthYoutobeCallBack: function ($videos) {
             var self = this;
             if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
                 Themify.LoadAsync(
-                        "//www.youtube.com/iframe_api",
+                        '//www.youtube.com/iframe_api',
                         function () {
                             window.onYouTubePlayerAPIReady = _each;
                         },
@@ -693,60 +1113,78 @@ var ThemifyBuilderModuleJs;
                 _each();
             }
             function _each() {
-                $.each($videos, function (i, elm) {
-                    var params = self.videoParams(elm.el);
-                    elm.el.ThemifyYTBPlayer({
-                        videoID: elm.id,
-                        id: elm.el.closest('.themify_builder_content').data('postid') + '_' + i,
+                for(var i=0,len=$videos.length;i<len;++i){
+                    var params = self.videoParams($videos[i].el);
+                    $videos[i].el.ThemifyYTBPlayer({
+                        videoID: $videos[i].id,
+                        id: $videos[i].el.closest('.themify_builder_content').data('postid') + '_' + i,
                         mute: params.mute,
                         loop: params.loop,
                         mobileFallbackImage: tbLocalScript.videoPoster
                     });
-                });
+                }
             }
 
         },
         fullwidthVimeoCallBack: function ($videos) {
             var self = this;
-            if (typeof self.fullwidthVimeoCallBack.counter === 'undefined') {
+             if (typeof self.fullwidthVimeoCallBack.counter === 'undefined') {
                 self.fullwidthVimeoCallBack.counter = 1;
-                $(window).on('tfsmartresize', function (e) {
-                    if (!e.isTrigger) {
-                        $.each($videos, function (i, elm) {
-                            VimeoVideo(elm.el.children('.themify-video-vmieo'));
-                        });
+                $(window).on('tfsmartresize.tfVideo', function vimeoResize(e) {
+                    for(var i in $videos){
+                        if($videos[i]){
+                            var ch = $videos[i].el.children('.themify-video-vmieo');
+                            if(ch.length>0){
+                                VimeoVideo(ch);
+                            }
+                            else{
+                                delete $videos[i];
+                                $videos[i] = null;
+                            }
+                        }
+                    }
+                    if($videos.length===0){
+                        self.fullwidthVimeoCallBack.counter = 'undefined';
+                        $(window).off('tfsmartresize.tfVideo', vimeoResize);
                     }
                 });
 
             }
             function VimeoVideo($video) {
-                var height = $video.outerHeight(true),
-                    pWidth = Math.ceil(height * 1.8), //1.8 ~ 16/9 aspectratio
-                    iframe = $video.children('iframe');
-                    
-                iframe.width(pWidth).height(height);
-            }
-            $.each($videos, function (i, elm) {
-                var $video = elm.el,
-                        params = self.videoParams($video),
-                        $iframe = $('<div class="big-video-wrap themify-video-vmieo"><iframe id="themify-vimeo-' + i + '" src="//player.vimeo.com/video/' + elm.id + '?api=1&portrait=0&title=0&title=0&badge=0&player_id=themify-vimeo-' + i + '" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>');
-                $video.prepend($iframe);
-                var player = $f($('#themify-vimeo-' + i)[0]);
-                player.addEvent('ready', function () {
-                    player.api('setLoop', params.loop);
-                    player.api('setVolume', params.mute ? 0 : 1);
-                    player.api('fullscreen', 0);
-                    if ($video.children('.big-video-wrap').length > 1) {
-                        $video.children('.big-video-wrap').slice(1).remove();
-                    }
-                    VimeoVideo($iframe);
-                    player.api('play');
+                var width = $video.outerWidth(true),
+                    height = $video.outerHeight(true),
+                    pHeight = Math.ceil(width / 1.7), //1.7 ~ 16/9 aspectratio
+                    iframe = $video.find('iframe');
+                iframe.width(width).height(pHeight).css({
+                    left: 0,
+                    top: (height - pHeight) / 2
                 });
-            });
+            }
+            for(var i in $videos){
+                 if($videos[i]){
+                 var $video = $videos[i].el,
+                    params = self.videoParams($video);
+                    $video[0].insertAdjacentHTML('afterbegin','<div class="big-video-wrap themify-video-vmieo"><iframe id="themify-vimeo-' + i + '" src="https://player.vimeo.com/video/' + $videos[i].id + '?api=1&portrait=0&title=0&badge=0&player_id=themify-vimeo-' + i + '" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>');
+                    var player = $f($('#themify-vimeo-' + i)[0]);
+                    player.addEvent('ready', function () {
+                        player.api('setLoop', params.loop);
+                        player.api('setVolume', params.mute ? 0 : 1);
+                        player.api('fullscreen', 0);
+                        var v = $video.children('.themify-video-vmieo');
+                        if (v.length > 1) {
+                            v.slice(1).remove();
+                        }
+                        VimeoVideo(v);
+                        player.api('play');
+                    });
+                 }
+            }
         },
         playFocusedVideoBg: function () {
             var self = ThemifyBuilderModuleJs,
                     playOnFocus = function () {
+                        if (!self.fwvideos.length > 0)
+                            return;
                         var h = window.innerHeight;
                         for (var i in self.fwvideos) {
                             var el = self.fwvideos[i].getPlayer();
@@ -764,7 +1202,7 @@ var ThemifyBuilderModuleJs;
         },
         charts: function (el) {
             var elements = $('.module-feature-chart-html5', el),
-                self = this;
+                    self = this;
             if (elements.length > 0) {
                 if (this.charts_data === undefined) {
                     this.charts_data = {};
@@ -777,8 +1215,8 @@ var ThemifyBuilderModuleJs;
 
                 function chartsCSS(charts) {
                     var styleId = 'chart-html5-styles',
-                        styleHTML = '<style id="' + styleId + '">',
-                        prefix = Themify.getVendorPrefix();
+                            styleHTML = '<style id="' + styleId + '">',
+                            prefix = Themify.getVendorPrefix();
                     for (var i in charts) {
                         styleHTML += '.module-feature-chart-html5[data-progress="' + i + '"] .chart-html5-full,' +
                                 '.module-feature-chart-html5[data-progress="' + i + '"] .chart-html5-fill {' + prefix + 'transform: rotate(' + charts[i] + 'deg);transform:rotate(' + charts[i] + 'deg);}';
@@ -791,14 +1229,24 @@ var ThemifyBuilderModuleJs;
                 // this mess adjusts the size of the chart, to make it responsive
                 var setChartSize = function ($this) {
                     var width = Math.min($this.data('size'), $this.closest('.module-feature').width()),
-                        halfw = Math.ceil(width / 2);
-                    $this.css({width: width, height: width}).find('.chart-html5-mask').prop('style', 'clip: rect(0px, ' + width + 'px, ' + width + 'px, ' + halfw + 'px)');
-                    $this.find('.chart-html5-fill').addClass('chart-loaded').prop('style', 'clip: rect(0px, ' + halfw + 'px, ' + width + 'px, 0px)');
+                            halfw = Math.ceil(width / 2);
+                    $this.css( {width: width, height: width} ).find( '.chart-html5-mask' ).css( {
+						borderRadius: '0 ' + halfw + 'px ' + halfw + 'px 0',
+						clip: 'rect(0px, ' + width + 'px, ' + width + 'px, ' + halfw + 'px)'
+					} );
+					
+					$this.find( '.chart-html5-fill' ).addClass('chart-loaded').css( {
+						borderRadius: halfw + 'px 0 0 ' + halfw + 'px',
+						clip: 'rect(0px, ' + halfw + 'px, ' + width + 'px, 0px)'
+					} );
                 };
                 var deg = parseFloat(180 / 100).toFixed(2),
-                    reinit = false;
+                        reinit = false;
                 elements.each(function () {
                     var progress = $(this).data('progress-end');
+                    if (progress === undefined) {
+                        progress = 100;
+                    }
                     if (self.charts_data [progress] === undefined) {
                         self.charts_data [progress] = parseFloat(deg * progress).toFixed(2) - 0.1;
                         reinit = true;
@@ -808,15 +1256,34 @@ var ThemifyBuilderModuleJs;
                 if (reinit === true) {
                     chartsCSS(self.charts_data);
                 }
-                elements.each(function () {
-                    var $this = $(this);
-                    $this.waypoint(function () {
-                        $this.attr('data-progress', $this.data('progress-end'));
-                    }, {
-                        offset: '100%',
-                        triggerOnce: true
+                if(!Themify.body.hasClass('full-section-scrolling-horizontal')) {
+                    elements.each(function () {
+                        var $this = $(this);
+                        var horizontal = ($this.closest('.module_row_slide').is(':not(:first-child)'));
+                        if(horizontal) {
+                            $this.waypoint(function() {
+                                $this.attr('data-progress', $this.data('progress-end'));
+                            }, {
+                                horizontal: true,
+                                offset: 'right-in-view'
+                            });
+                        } else {
+                            $this.waypoint(function () {
+                                $this.attr('data-progress', $this.data('progress-end'));
+                            }, {
+                                offset: '100%',
+                                triggerOnce: true
+                            });
+                        }
                     });
-                });
+                } else {
+                    Themify.body.on('themify_onepage_slide_onleave', function(event, $slide) {
+                        $slide.find('.module-feature-chart-html5').each(function() {
+                            $(this).attr('data-progress', $(this).data('progress-end'));
+                        });
+                    })
+
+                }
                 $(window).on('tfsmartresize.charts', function () {
                     elements.each(function () {
                         setChartSize($(this));
@@ -844,41 +1311,61 @@ var ThemifyBuilderModuleJs;
             }
 
         },
-        videoSliderAutoHeight: function ($this) {
-            // Get all the possible height values from the slides
-            var heights = $this.children().map(function () {
-                return $(this).height();
-            });
-            // Find the max height and set it
-            $this.parent().height(Math.max.apply(null, heights));
-        },
+		sliderAutoHeight: function ($this) {
+			if( 'video' === $this.data('type') ) {
+				// Get all the possible height values from the slides
+				var heights = $this.children().map( function () { return $(this).height(); });
+				$this.parent().height( Math.max.apply( null, heights ) );
+			} else if( $this.closest( '.module-slider' ).is( '.slider-overlay, .slider-caption-overlay' ) ) {
+				var sliderContent = $this.find( '.slide-content' ),
+					originalOffset = 0;
+				if( sliderContent.eq(0).attr( 'style' ) === undefined ) {
+					originalOffset = parseFloat( sliderContent.eq(0).css( 'bottom' ) );
+					$this.data( 'captionOffset', originalOffset );
+				} else if( $this.data( 'captionOffset' ) ) {
+					originalOffset = $this.data( 'captionOffset' );
+				}
+
+				sliderContent.each( function() {
+					var $el = $( this ),
+						captionOffset = $el.closest( '.slide-inner-wrap' ).height() - $this.parent().height();
+					$el.css( 'bottom', captionOffset + originalOffset );
+				} );
+			}
+		},
         carouselCalback: function (el) {
-            var self = this;
-            $('.themify_builder_slider', el).each(function () {
-                if ($(this).closest('.caroufredsel_wrapper').length > 0) {
-                    return;
-                }
-                var $this = $(this),
-                        img_length = $this.find('img').length,
-                        $height = (typeof $this.data('height') === 'undefined') ? 'variable' : $this.data('height'),
+            var self = this,
+                isMobile = function() {
+                        return tbLocalScript && tbLocalScript.breakpoints
+                        ? tbLocalScript.breakpoints.mobile > window.innerWidth : self._isMobile();
+                };
+
+                $( '.themify_builder_slider', el ).each( function () {
+                    if( $( this ).closest( '.caroufredsel_wrapper' ).length > 0 ) {
+                        return;
+                    }
+
+                var $this = $( this ),
+                        img_length = $this.find( 'img' ).length,
+                        $height = ( typeof $this.data( 'height' ) === 'undefined' ) ? 'variable' : $this.data( 'height' ),
+                        visibleItems = isMobile() && $this.data( 'mob-visible' ) ? $this.data( 'mob-visible' ) : { min: 1, max: $this.data( 'visible' ) },
                         $args = {
                             responsive: true,
                             circular: true,
                             infinite: true,
                             height: $height,
                             items: {
-                                visible: {min: 1, max: $this.data('visible')},
+                                visible: visibleItems,
                                 width: 150,
                                 height: 'variable'
                             },
-                            onCreate: function (items) {
+                            onCreate: function( items ) {
                                 $('.themify_builder_slider_wrap').css({'visibility': 'visible', 'height': 'auto'});
                                 $this.trigger('updateSizes');
-                                $('.themify_builder_slider_loader').remove();
+                                $('.tb_slider_loader').remove();
 
-                                // Fix bug video height with auto height settings.
-                                if ('auto' === $height && 'video' === $this.data('type')) {
-                                    ThemifyBuilderModuleJs.videoSliderAutoHeight($this);
+                                if( 'auto' === $height ) {
+                                    ThemifyBuilderModuleJs.sliderAutoHeight( $this );
                                 }
                             }
                         };
@@ -886,7 +1373,7 @@ var ThemifyBuilderModuleJs;
                 // fix the one slide problem
                 if ($this.children().length < 2) {
                     $('.themify_builder_slider_wrap').css({'visibility': 'visible', 'height': 'auto'});
-                    $('.themify_builder_slider_loader').remove();
+                    $('.tb_slider_loader').remove();
                     $(window).resize();
                     return;
                 }
@@ -897,7 +1384,7 @@ var ThemifyBuilderModuleJs;
                         play: true,
                         timeoutDuration: parseInt($this.data('auto-scroll') * 1000)
                     };
-                }
+                } 
                 else if ($this.data('effect') !== 'continuously' && (typeof $this.data('auto-scroll') !== 'undefined' || parseInt($this.data('auto-scroll')) === 0)) {
                     $args.auto = false;
                 }
@@ -947,9 +1434,12 @@ var ThemifyBuilderModuleJs;
                     $args.infinite = false;
                 }
 
-
+				if( $this.data( 'sync' ) ) {
+					$args.synchronise = [$this.data( 'sync' ), false];
+				}
+				
                 if (img_length > 0) {
-                    $this.imagesLoaded().always(function () {
+                    $this.imagesLoaded(function () {
                         self.carouselInitSwipe($this, $args);
                     });
                 } else {
@@ -959,13 +1449,22 @@ var ThemifyBuilderModuleJs;
                 $('.mejs__video').on('resize', function (e) {
                     e.stopPropagation();
                 });
+
                 $(window).on('tfsmartresize', function () {
                     $('.mejs__video').resize();
                     $this.trigger('updateSizes');
 
-                    // Fix bug video height with auto height settings.
-                    if ('auto' === $height && 'video' === $this.data('type')) {
-                        ThemifyBuilderModuleJs.videoSliderAutoHeight($this);
+                    if ( 'auto' === $height ) {
+                            ThemifyBuilderModuleJs.sliderAutoHeight($this);
+                    }
+
+                    var vMode;
+                    if( ( ! vMode || vMode === 'desktop' ) && $this.data( 'mob-visible' ) && isMobile() ) {
+                        vMode = 'mobile';
+                        $this.trigger( 'finish' ).trigger( 'configuration', { items: { visible: $this.data( 'mob-visible' ) } } );
+                    } else if( ! vMode || vMode === 'mobile' ) {
+                        vMode = 'desktop';
+                        $this.trigger( 'finish' ).trigger( 'configuration', { items: { visible: $this.data( 'visible' ) } } );
                     }
                 });
 
@@ -986,6 +1485,13 @@ var ThemifyBuilderModuleJs;
                     $(target).parent().trigger('click');
                 }
             });
+
+			if( $args.auto && $args.auto.timeoutDuration === 0 && $args.next && $args.prev && $args.scroll ) {
+				Themify.body.on( 'click', [$args.next, $args.prev].join(), function() {
+					$this.trigger( 'finish' );
+					$this.trigger( $( this ).is( $args.next ) ? 'next' : 'prev', [{duration: $args.scroll.duration * 2}]);
+				} );
+			}
         },
         loadOnAjax: function (el, type) {
             var self = ThemifyBuilderModuleJs;
@@ -997,7 +1503,9 @@ var ThemifyBuilderModuleJs;
             self.carousel(el);
             self.charts(el);
             self.fullwidthVideo(el, null);
-            if (!el) {
+            if (el) {
+                self.backgroundSlider(el.find('.row-slider, .column-slider, .subrow-slider'));
+            } else {
                 self.backgroundSlider();
             }
             var zoomScrolling = null,
@@ -1017,29 +1525,25 @@ var ThemifyBuilderModuleJs;
                     if (el.hasClass('builder-parallax-scrolling')) {
                         bgscrolling = bgscrolling.add(el);
                     }
-
                 }
             }
             if (zoomScrolling === null || zoomScrolling.length > 0) {
                 self.backgroundZoom(zoomScrolling);
             }
+            zoomScrolling = null;
             if (zoom === null || zoom.length > 0) {
                 self.backgroundZooming(zoom);
             }
+            zoom = null;
             if (tbLocalScript.isParallaxActive && (bgscrolling === null || bgscrolling.length > 0)) {
                 self.backgroundScrolling(bgscrolling);
             }
-            self.menuModuleMobileStuff(false,el);
+            bgscrolling = null;
+            self.menuModuleMobileStuff(false, el);
             if (tbLocalScript.isAnimationActive) {
                 self.wowInit(null, el);
             }
-        },
-        fullheight: function () {
-            // Set full-height rows to viewport height
-            var selector = $('.module_row.fullheight');
-            $(window).on('tfsmartresize', function () {
-                selector.height($(window).height());
-            });
+			self.galleryMasonry();
         },
         touchdropdown: function (el) {
             if (tbLocalScript.isTouch) {
@@ -1059,12 +1563,17 @@ var ThemifyBuilderModuleJs;
             }
         },
         accordion: function () {
-            $('body').off('click.themify', '.accordion-title').on('click.themify', '.accordion-title', function (e) {
+            Themify.body.off('click.themify', '.accordion-title').on('click.themify', '.accordion-title', function (e) {
                 var $this = $(this),
                         $panel = $this.next(),
                         $item = $this.closest('li'),
+						$parent = $item.parent(),
                         type = $this.closest('.module.module-accordion').data('behavior'),
                         def = $item.toggleClass('current').siblings().removeClass('current'); /* keep "current" classname for backward compatibility */
+
+				if( ! $parent.hasClass( 'tf-init-accordion' ) ) {
+					$parent.addClass( 'tf-init-accordion' );
+				}
 
                 if ('accordion' === type) {
                     def.find('.accordion-content').slideUp().attr('aria-expanded', 'false').closest('li').removeClass('builder-accordion-active');
@@ -1095,11 +1604,11 @@ var ThemifyBuilderModuleJs;
                     $panel.attr('aria-expanded', 'true');
 
                     // Show map marker properly in the center when tab is opened
-                    var existing_maps = $($panel).hasClass('default-closed') ? $panel.find(".themify_map") : false;
-                    if (existing_maps.length) {
-                        for (var i = 0; i < existing_maps.length; i++) { // use loop for multiple map instances in one tab
+                    var existing_maps = $panel.hasClass('default-closed') ? $panel.find('.themify_map') : false;
+                    if (existing_maps && existing_maps.length>0) {
+                        for (var i = 0; i < existing_maps.length; ++i) { // use loop for multiple map instances in one tab
                             var current_map = $(existing_maps[i]).data('gmap_object'); // get the existing map object from saved in node
-                            if (typeof current_map.already_centered !== "undefined" && !current_map.already_centered)
+                            if (typeof current_map.already_centered !== 'undefined' && !current_map.already_centered)
                                 current_map.already_centered = false;
                             if (!current_map.already_centered) { // prevent recentering
                                 var currCenter = current_map.getCenter();
@@ -1111,23 +1620,46 @@ var ThemifyBuilderModuleJs;
                     }
                 }
 
-                $('body').trigger('tb_accordion_switch', [$panel]);
-                Themify.triggerEvent(window, 'resize');
+                Themify.body.trigger('tb_accordion_switch', [$panel]);
+                if (!Themify.is_builder_active) {
+                    Themify.triggerEvent(window, 'resize');
+                }
                 e.preventDefault();
             });
         },
         tabs: function (el) {
-            $('.module.module-tab', el).each(function () {
-                var $height = $('.tab-nav:first', this).outerHeight();
+            var items= $('.module.module-tab', el);
+            if(el && el.hasClass('module-tab')){
+                items = items.add(el);
+            }
+            items.each(function () {
+                var tab = $('.tab-nav:first', this),
+                    $height = tab.outerHeight();
                 if ($height > 200) {
-                    $(".tab-nav:first", this).siblings(".tab-content").css('min-height', $height);
+                    tab.siblings('.tab-content').css('min-height', $height);
                 }
-            }).tabify();
+                if (Themify.is_builder_active) {
+                    $(this).data('tabify',false);
+                }
+                $(this).tabify();
+            });
+        },
+        tabsClick:function(){
+                Themify.body.off( 'click' ,'a[href*="#tab-"]').on( 'click','a[href*="#tab-"]',  function(e) {
+                    
+                    if ( $( this ).closest( '.tab-nav' ).length )
+                                    return;
+                    var hash = $( this.hash);
+                    if ( hash.length && hash.closest( '.module-tab' ).length ) {
+                        hash.closest( '.module-tab' ).find( '.tab-nav a[href="' + this.hash +'"]' ).click();
+                        e.preventDefault();
+                    }
+            } );  
         },
         tabsDeepLink: function () {
-            var hash = window.location.hash;
+            var hash = decodeURIComponent( window.location.hash );
             hash = hash.replace('!/', ''); // fix conflict with section highlight
-            if ('' != hash && '#' !== hash && $(hash + '.tab-content').length > 0) {
+            if ('' != hash && '#' !== hash && -1 === hash.search('/') && $(hash + '.tab-content').length > 0) {
                 var cons = 100,
                         $moduleTab = $(hash).closest('.module-tab');
                 if ($moduleTab.length > 0) {
@@ -1157,7 +1689,7 @@ var ThemifyBuilderModuleJs;
                         var rect = this.getBoundingClientRect();
                         if (rect.bottom >= 0 && rect.top <= height) {
                             var zoom = 140 - (rect.top + this.offsetHeight) / (height + this.offsetHeight) * 40;
-                            $(this).css('background-size', zoom + '%')
+                            $(this).css('background-size', zoom + '%');
                         }
                     });
                 }
@@ -1184,17 +1716,18 @@ var ThemifyBuilderModuleJs;
             }
 
             function doZooming(e) {
-                var zoomingClass = 'active-zooming';
+                 
                 if (e !== null) {
                     el = $(selector);
                 }
                 if (el.length > 0) {
                     var height = window.innerHeight,
-                        clientHeight = document.documentElement.clientHeight,
-                        bclientHeight = document.body.clientHeight;
+                            clientHeight = document.documentElement.clientHeight,
+                            bclientHeight = document.body.clientHeight,
+                            zoomingClass = 'active-zooming';
 
                     el.each(function () {
-                        if (!$(this).hasClass(zoomingClass) && isZoomingElementInViewport(this, height, clientHeight, bclientHeight)) {
+                        if (!this.classList.contains(zoomingClass) && isZoomingElementInViewport(this, height, clientHeight, bclientHeight)) {
                             $(this).addClass(zoomingClass);
                         }
                     });
@@ -1214,13 +1747,12 @@ var ThemifyBuilderModuleJs;
             function doAnimation() {
                 resync = resync || false;
                 // On scrolling animation
-                var $body = $('body');
-                if ($body.find(selectors).length > 0) {
-                    if (!$body.hasClass('animation-running')) {
-                        $body.addClass('animation-running');
+                if ($(selectors).length > 0) {
+                    if (!Themify.body.hasClass('animation-running')) {
+                        Themify.body.addClass('animation-running');
                     }
-                } else if ($body.hasClass('animation-running')) {
-                    $body.removeClass('animation-running');
+                } else if (Themify.body.hasClass('animation-running')) {
+                    Themify.body.removeClass('animation-running');
                 }
 
                 // Core Builder Animation
@@ -1240,7 +1772,7 @@ var ThemifyBuilderModuleJs;
                     }
                 }
             }
-            $('body').addClass('animation-on');
+           Themify.body.addClass('animation-on');
             doAnimation();
         },
         setupBodyClasses: function () {
@@ -1251,10 +1783,10 @@ var ThemifyBuilderModuleJs;
             if (ThemifyBuilderModuleJs._isMobile()) {
                 classes.push('builder-is-mobile');
             }
-            if (tbLocalScript.isParallaxActive){
+            if (tbLocalScript.isParallaxActive) {
                 classes.push('builder-parallax-scrolling-active');
             }
-            if(!Themify.is_builder_active){
+            if (!Themify.is_builder_active) {
                 $('.themify_builder_content').each(function () {
                     if ($(this).children(':not(.js-turn-on-builder)').length > 0) {
                         classes.push('has-builder');
@@ -1262,11 +1794,11 @@ var ThemifyBuilderModuleJs;
                     }
                 });
             }
-            $('body').addClass(classes.join(' '));
+            Themify.body.addClass(classes.join(' '));
         },
         _isTouch: function () {
             var isTouchDevice = this._isMobile(),
-                isTouch = isTouchDevice || (('ontouchstart' in window) || (navigator.msMaxTouchPoints > 0) || (navigator.maxTouchPoints));
+                    isTouch = isTouchDevice || (('ontouchstart' in window) || (navigator.msMaxTouchPoints > 0) || (navigator.maxTouchPoints));
             return isTouch;
         },
         _isMobile: function () {
@@ -1276,7 +1808,7 @@ var ThemifyBuilderModuleJs;
             return this.is_mobile;
         },
         galleryPagination: function () {
-            $('body').delegate('.builder_gallery_nav a', 'click', function (e) {
+           Themify.body.on( 'click', '.module-gallery .pagenav a',  function (e) {
                 e.preventDefault();
                 var $wrap = $(this).closest('.module-gallery');
                 $.ajax({
@@ -1285,42 +1817,108 @@ var ThemifyBuilderModuleJs;
                         $wrap.addClass('builder_gallery_load');
                     },
                     complete: function () {
-                        $wrap.removeClass('builder_gallery_load');
+                        $wrap.removeClass( 'builder_gallery_load' );
+						ThemifyBuilderModuleJs.galleryMasonry();
                     },
                     success: function (data) {
                         if (data) {
                             var $id = $wrap.prop('id');
-                            $wrap.html($(data).find('#' + $id).html());
+                            $wrap.html( $(data).find('#' + $id).html() );
                         }
                     }
                 });
             });
         },
+        pageBreakPagination: function () {
+            var $pagination = $( ".post-pagination" )
+            if(!$pagination.length){
+                return;
+            }
+            $pagination.addClass('pagenav clearfix');
+            var content = $(this).text().replace(/ /g,'');
+            $pagination.contents().filter(function(){
+                if(this.nodeValue != null && this.nodeValue.replace(/ /g,'') != '')
+                return this.nodeType !== 1;
+            }).wrap( "<span class='current number'></span>" );
+            $pagination.find('a').addClass('number');
+            $pagination.find('strong').remove();
+            $pagination.css('display','block');
+         },
+		galleryMasonry : function() {
+			var gallery = $( '.module-gallery.gallery-masonry' );
+			if( gallery.length ) {
+				Themify.LoadAsync( themify_vars.includesURL + 'js/imagesloaded.min.js', function () {
+					Themify.LoadAsync( themify_vars.includesURL + 'js/masonry.min.js', function () {
+						var rtl = ! Themify.body[0].classList.contains( 'rtl' );
+
+						gallery.each( function() {
+							var $this = $( this );
+
+							$( this ).imagesLoaded( function () {
+								$this.data( 'masonry' ) && $this.data( 'masonry' ).destroy();
+
+								$this.masonry({
+									itemSelector: '.gallery-item',
+									originLeft: rtl,
+									stamp: '.module-title',
+									gutter: '.module-gallery-gutter'
+								});
+							});
+						});
+					}, null, null, function () {
+						return 'undefined' !== typeof $.fn.masonry;
+					} );
+				}, null, null, function () {
+					return 'undefined' !== typeof $.fn.imagesLoaded;
+				} );
+			}
+		},
         showcaseGallery: function () {
-            $('body').on( 'click', '.module-gallery.layout-showcase a', function (e) {
+            Themify.body.on('click', '.module-gallery.layout-showcase a', function (e) {
                 e.preventDefault();
-                var showcaseContainer = $(this).closest('.gallery').find('.gallery-showcase-image');
-                showcaseContainer.find( 'img' ).prop( 'src', $( this ).data( 'image' ) );
-                showcaseContainer.find( '#gallery-showcase-title' ).html( $( this ).prop( 'title' ) );
-                showcaseContainer.find( '#gallery-showcase-caption' ).html( $( this ).data( 'caption' ) );
+                var showcaseContainer = $(this).closest('.gallery').find('.gallery-showcase-image'),
+                        titleBox = showcaseContainer.find('.gallery-showcase-title');
+
+                titleBox.css({opacity: '', visibility: ''});
+                showcaseContainer.find('img').prop('src', $(this).data('image'));
+                showcaseContainer.find('.gallery-showcase-title').html($(this).prop('title'));
+                showcaseContainer.find('.gallery-showcase-caption').html($(this).data('caption'));
+                !$.trim(titleBox.text()) && titleBox.css({opacity: 0, visibility: 'hidden'});
             });
         },
-        parallaxScrollingInit: function (el,is_live) {
+		sliderGallery: function() {
+			var galleries = $( '.module-gallery.layout-slider' );
+
+			galleries.length && galleries.each( function() {
+				var slides = $( '.themify_builder_slider', this );
+
+				if( slides.length === 2 ) {
+					var items = slides.eq(1).children( 'li' );
+					items.on( 'click', function( e ) {
+						e.preventDefault();
+
+						slides.eq(0).trigger( 'slideTo', items.index( this ) );
+
+					} );
+				}
+			} );
+		},
+        parallaxScrollingInit: function (el, is_live) {
             if (tbLocalScript.isParallaxScrollActive) {
-                if(el){
-                    if(is_live){
+                if (el) {
+                    if (is_live) {
                         el = el.get();
                     }
-                    else{
+                    else {
                         var is_rellax = el.data('parallax-element-speed'),
-                            p = el.get(0);
+                                p = el.get(0);
                         el = Array.prototype.slice.call(p.querySelectorAll('[data-parallax-element-speed]'));
-                        if(is_rellax){
+                        if (is_rellax) {
                             el.push(p);
                         }
                     }
                 }
-                else{
+                else {
                     el = document.querySelectorAll('[data-parallax-element-speed]');
                 }
                 if (el.length > 0) {
@@ -1336,7 +1934,7 @@ var ThemifyBuilderModuleJs;
             }
             function parallaxScrollingCallback() {
                 function rellaxInit(items) {
-                   new Rellax(items, {
+                    new Rellax(items, {
                         round: false
                     });
                 }
@@ -1351,24 +1949,21 @@ var ThemifyBuilderModuleJs;
                 }
             }
         },
-        menuModuleMobileStuff: function (is_resize,el) {
+        menuModuleMobileStuff: function (is_resize, el) {
             var menuModules = $('.module.module-menu', el);
 
-            if (menuModules.length>0) {
+            if (menuModules.length > 0) {
                 var windowWidth = window.innerWidth,
-                    $body =  $('body'),
-                    closeMenu = function () {
-                        $('.mobile-menu-module')
-                                .empty()
-                                .prop('class', 'mobile-menu-module')
-                                .next('.body-overlay')
-                                .removeClass('body-overlay-on');
-                        $body.removeClass('menu-module-left menu-module-right');
-                    };
-                if ($body.find('.mobile-menu-module').length === 0) {
-                    $body
-                            .append($('<div />', {addClass: 'mobile-menu-module'}))
-                            .append($('<div />', {addClass: 'body-overlay'}));
+                        closeMenu = function () {
+                            $('.mobile-menu-module')
+                                    .empty()
+                                    .prop('class', 'mobile-menu-module')
+                                    .next('.body-overlay')
+                                    .removeClass('body-overlay-on');
+                            Themify.body.removeClass('menu-module-left menu-module-right');
+                        };
+                if ($('.mobile-menu-module').length === 0) {
+                    Themify.body[0].insertAdjacentHTML('beforeend','<div class="themify_builder"><div class="mobile-menu-module"></div><div class="body-overlay"></div></div>');
                 }
 
                 menuModules.each(function () {
@@ -1377,7 +1972,7 @@ var ThemifyBuilderModuleJs;
 
                     if (breakpoint) {
                         var menuContainer = $this.find('div[class*="-container"]'),
-                            menuBurger = $this.find('.menu-module-burger');
+                                menuBurger = $this.find('.menu-module-burger');
 
                         if (windowWidth >= breakpoint) {
                             menuContainer.show();
@@ -1388,20 +1983,20 @@ var ThemifyBuilderModuleJs;
                         }
 
                         if (!is_resize) {
-                            if ($this.next('style').length>0) {
+                            if ($this.next('style').length > 0) {
                                 var styleContent = $this.next('style').html().replace(/\.[^{]+/g, function (match) {
                                     return match + ', .mobile-menu-module' + match.replace(/\.themify_builder\s|\.module-menu/g, '');
                                 });
 
                                 $this.next('style').html(styleContent);
                             }
-                            $this.append('<a class="menu-module-burger"></a>');
+                            $this[0].insertAdjacentHTML('beforeend','<a class="menu-module-burger"></a>');
                         }
                     }
                 });
 
                 if (!is_resize && !Themify.is_builder_active) {
-                    $body.on('click', '.menu-module-burger', function (e) {
+                    Themify.body.on('click', '.menu-module-burger', function (e) {
                         e.preventDefault();
 
                         var menuDirection = $(this).parent().data('menu-direction'),
@@ -1411,130 +2006,323 @@ var ThemifyBuilderModuleJs;
 
                         customStyle = customStyle ? customStyle[0] : '';
                         menuContent = menuContent.removeAttr('id').removeAttr('class').addClass('nav');
-                        menuContent.find('ul').prev('a').append('<i class="toggle-menu fa fa-angle-down"></i>');
-                        $body.addClass('menu-module-' + menuDirection);
+                        if( menuContent.find('ul').length ){
+                            menuContent.find('ul').prev('a').append('<i class="toggle-menu fa fa-angle-down"></i>');
+                        }
+                        Themify.body.addClass('menu-module-' + menuDirection);
                         $('.mobile-menu-module').addClass(menuDirection + ' ' + menuUI + ' ' + customStyle)
-                        .html(menuContent)
-                        .prepend('<a class="menu-close"></a>')
-                        .next('.body-overlay')
-                        .addClass('body-overlay-on');
+                                .html(menuContent)
+                                .prepend('<a class="menu-close"></a>')
+                                .next('.body-overlay')
+                                .addClass('body-overlay-on');
 
                     })
-                    .on('click', '.mobile-menu-module ul a', function (e) {
-                        var $this = $(this),
-                                $linkIcon = $this.find('i.toggle-menu');
-                        if ($this.has('i.toggle-menu').length) {
-                            e.preventDefault();
-                            $this.next('ul').toggle();
-                            if ($linkIcon.hasClass('fa-angle-down')) {
-                                $linkIcon.removeClass('fa-angle-down').addClass('menu-close');
-                            } else {
-                                $linkIcon.removeClass('menu-close').addClass('fa-angle-down');
-                            }
-                        }
-                    })
-                    .on('click', '.mobile-menu-module > .menu-close, .mobile-menu-module + .body-overlay', closeMenu);
+                            .on('click', '.mobile-menu-module ul a', function (e) {
+                                var $this = $(this),
+                                        $linkIcon = $this.find('i.toggle-menu');
+                                if ($this.has('i.toggle-menu').length) {
+                                    e.preventDefault();
+                                    $this.next('ul').toggle();
+                                    if ($linkIcon.hasClass('fa-angle-down')) {
+                                        $linkIcon.removeClass('fa-angle-down').addClass('menu-close');
+                                    } else {
+                                        $linkIcon.removeClass('menu-close').addClass('fa-angle-down');
+                                    }
+                                }
+                            })
+                            .on('click', '.mobile-menu-module > .menu-close, .mobile-menu-module + .body-overlay', closeMenu);
                 } else {
-                    closeMenu()
+                    closeMenu();
                 }
             }
         },
         GridBreakPoint: function () {
-            var tablet = tbLocalScript.breakpoints.tablet_landscape,
-                    mobile = tbLocalScript.breakpoints.mobile,
-                    rows = document.querySelectorAll('.row_inner,.subrow_inner'),
-                    prev = false;
-            function Breakpoints() {
-                var width = $(window).width(),
-                    type = 'desktop';
-                if (width <= mobile) {
-                    type = 'mobile';
+			var tablet_landscape = tbLocalScript.breakpoints.tablet_landscape,
+				tablet = tbLocalScript.breakpoints.tablet,
+				mobile = tbLocalScript.breakpoints.mobile,
+				rows = document.querySelectorAll('.row_inner,.subrow_inner'),
+				prev = false;
+
+			function Breakpoints() {
+				var width = $(window).width(),
+					type = 'desktop';
+
+				if (width <= mobile) {
+					type = 'mobile';
+				} else if (width <= tablet[1]) {
+					type = 'tablet';
+				} else if (width <= tablet_landscape[1]) {
+					type = 'tablet_landscape';
+				}
+
+				if ( type !== prev ) {
+					var is_desktop = type === 'desktop',
+						set_custom_width = is_desktop || prev === 'desktop';
+
+					if (is_desktop) {
+						Themify.body.removeClass( 'tb_responsive_mode' );
+					} else {
+						Themify.body.addClass( 'tb_responsive_mode' );
+					}
+
+					for (var i = 0, len = rows.length; i < len; ++i) {
+						var columns = rows[i].children,
+							grid = rows[i].dataset['col_' + type],
+							first = columns[0],
+							last = columns[columns.length - 1],
+							base = rows[i].dataset['basecol'];
+
+						if ( set_custom_width ) {
+							for (var j = 0, clen = columns.length; j < clen; ++j) {
+								var w = columns[j].dataset['w'];
+								if (w) {
+									if (is_desktop) {
+										columns[j].style['width'] = w + '%';
+									} else {
+										columns[j].style['width'] = '';
+									}
+								}
+							}
+						}
+						var dir = rows[i].dataset[type + '_dir'];
+
+						if( first && last ) {
+							if ( dir === 'rtl' ) {
+								first.classList.remove( 'first' );
+								first.classList.add( 'last' );
+								last.classList.remove('last' );
+								last.classList.add( 'first' );
+								rows[i].classList.add( 'direction-rtl' );
+							} else {
+								first.classList.remove( 'last' );
+								first.classList.add( 'first' );
+								last.classList.remove( 'first' );
+								last.classList.add( 'last');
+								rows[i].classList.remove( 'direction-rtl' );
+							}
+						}
+
+						if( base && ! is_desktop ) {
+							if (prev !== false && prev !== 'desktop') {
+								rows[i].classList.remove( 'tb_3col' );
+								var prev_class = rows[i].dataset['col_' + prev];
+
+								if (prev_class) {
+									rows[i].classList.remove( $.trim( prev_class.replace( 'tb_3col', '' ).replace( 'mobile', 'column' ).replace( 'tablet', 'column' ) ) );
+								}
+							}
+
+							if ( ! grid || grid === '-auto' ) {
+								rows[i].classList.remove( 'tb_grid_classes' );
+								rows[i].classList.remove( 'col-count-' + base );
+							} else {
+								var cl = rows[i].dataset['col_' + type];
+
+								if (cl) {
+									rows[i].classList.add( 'tb_grid_classes' );
+									rows[i].classList.add( 'col-count-' + base );
+									cl = cl.split(' ');
+
+									cl.map( function( el ) {
+										rows[i].classList.add( $.trim( el.replace( 'mobile', 'column' ).replace( 'tablet', 'column' ) ) );
+									} );
+								}
+							}
+						}
+					}
+					prev = type;
+				}
+			}
+
+			Breakpoints();
+			$( window ).on( 'tfsmartresize.themify_grid', function (e) {
+				if (!e.isTrigger) {
+					Breakpoints();
+				}
+			} );
+        },
+        readMoreLink: function () {
+            Themify.body.on('click','.module-text-more', function (e) {
+                e.preventDefault();
+                if($(this).hasClass('tb-text-more-link')) {
+                    $(this).removeClass("tb-text-more-link").addClass("tb-text-less-link");
+                    $(this).parent().find('.more-text').slideDown(400, "linear");
+
+                } else {
+                    $(this).removeClass("tb-text-less-link").addClass("tb-text-more-link");
+                    $(this).parent().find('.more-text').slideUp(400, "linear");
                 }
-                else if (width <= tablet[1]) {
-                    type = 'tablet';
+            } );
+        },
+        stickyElementInit: function() {
+          if ( ! tbLocalScript.isStickyScrollActive ) return true;
+
+          var self = this;
+          self.stickyElementRun();
+          $(window).on('tfsmartresize.sticky', function () {
+              $('[data-sticky-active]').each(function(){
+                $(this).unstick();
+              });
+              self.stickyElementRun();
+          });
+        },
+        stickyElementRun: function() {
+            var body = document.body,
+                html = document.documentElement;
+
+            var documentHeight = Math.max( body.scrollHeight, body.offsetHeight, 
+                html.clientHeight, html.scrollHeight, html.offsetHeight ),
+                wH = window.innerHeight || html.clientHeight || body.clientHeight;
+
+            $('[data-sticky-active]').each(function(){
+                var $this = $(this),
+                    opts = $this.data('sticky-active'),
+                    stickVal = opts.stick.value ? parseInt( opts.stick.value ) : 0,
+                    topSpacing = 'px' === opts.stick.val_unit ? stickVal : ( ( stickVal / 100 ) * wH ),
+                    stickArgs = { topSpacing: topSpacing, zIndex: null, className: 'tb_sticky_scroll_active' },
+                    bottomSpacing = 0;
+
+                if ( 'bottom' === opts.stick.position ) {
+                    stickArgs.topSpacing = wH - this.offsetHeight - topSpacing;
                 }
-                if (type !== prev) {
-                    var is_desktop = type === 'desktop',
-                        set_custom_width = is_desktop || prev === 'desktop',
-                        reverse = type === 'tablet' ? 'mobile' : 'tablet'
-                    if (is_desktop) {
-                        $('body').removeClass('tb_responsive_mode');
+
+                if ( opts.unstick ) {
+                    if ( 'builder_end' === opts.unstick.el_type ) {
+                      var $builder = $this.closest('.themify_builder_content'),
+                          stopAt = $builder.offset().top + $builder.outerHeight(true);
+
+                      stickArgs.bottomSpacing = documentHeight - stopAt;
+                    } else {
+                      var targetEl = 'row' === opts.unstick.el_type ? opts.unstick.el_row_target : opts.unstick.el_mod_target,
+                          $target = $('[data-id="'+ targetEl +'"]'),
+                          unstickVal = opts.unstick.value ? parseInt( opts.unstick.value ) : 0,
+                          targetTop;
+
+                      if ( '%' === opts.unstick.val_unit ) {
+                          unstickVal = ( ( unstickVal / 100 ) * wH );
+                          console.log(unstickVal, 'unstickVal');
+                      }
+
+                      if ( $target.length ) {
+                          targetTop = documentHeight - ( $target.offset().top + this.offsetHeight + topSpacing );
+                          
+                          if ( 'bottom' === opts.unstick.current ) {
+                              if ( 'hits' === opts.unstick.rule ) {
+                                targetTop += wH - unstickVal;
+                              } else {
+                                targetTop += wH - ( $target.outerHeight(true) + unstickVal );
+                              }
+                          } else if ( 'this' === opts.unstick.current ) {
+                            targetTop = documentHeight - $target.offset().top;
+
+                            if ( 'passes' === opts.unstick.rule ) {
+                              targetTop -= this.offsetHeight;
+                            }
+                          } else {
+                              if ( 'hits' === opts.unstick.rule ) {
+                                targetTop += unstickVal;
+                              } else {
+                                targetTop -= unstickVal;
+                              }
+                          }
+                          stickArgs.bottomSpacing = targetTop;
+                      }
                     }
-                    else {
-                        $('body').addClass('tb_responsive_mode');
-                    }
-                    for (var i = 0, len = rows.length; i < len; ++i) {
-                        var base = rows[i].dataset['basecol'];
-                        if (base) {
-                            var columns = rows[i].children,
-                                    grid = rows[i].dataset['col_' + type],
-                                    first = columns[0],
-                                    last = columns[columns.length - 1];
-                            if (set_custom_width) {
-                                for (var j = 0, clen = columns.length; j < clen; ++j) {
-                                    var w = columns[j].dataset['w'];
-                                    if (w) {
-                                        if (is_desktop) {
-                                            columns[j].style['width'] = w + '%';
-                                        }
-                                        else {
-                                            columns[j].style['width'] = '';
-                                        }
-                                    }
-                                }
-                            }
-                            var dir = rows[i].dataset[type + '_dir'];
-                            if (dir === 'rtl') {
-                                first.classList.remove('first');
-                                first.classList.add('last');
-                                last.classList.remove('last');
-                                last.classList.add('first');
-                                rows[i].classList.add('direction-rtl');
-                            }
-                            else {
-                                first.classList.remove('last');
-                                first.classList.add('first');
-                                last.classList.remove('first');
-                                last.classList.add('last');
-                                rows[i].classList.remove('direction-rtl');
-                            }
-                            if (!is_desktop) {
-                                var prev_class = rows[i].dataset['col_' + reverse];
-                                rows[i].classList.remove('tb_3col');
-                                if (prev_class) {
-                                    rows[i].classList.remove($.trim(prev_class.replace('tb_3col','').replace('mobile','column').replace('tablet','column')));
-                                }
-                                if (!grid || grid === '-auto') {
-                                    rows[i].classList.remove('tb_grid_classes');
-                                    rows[i].classList.remove('col-count-' + base);
-                                }
-                                else {
-                                    var cl = rows[i].dataset['col_' + type];
-                                    if (cl) {
-                                        rows[i].classList.add('tb_grid_classes');
-                                        rows[i].classList.add('col-count-' + base);
-                                        cl = cl.split(' ');
-                                        for(var c in cl){
-                                          rows[i].classList.add($.trim(cl[c].replace('mobile','column').replace('tablet','column'))); 
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    prev = type;
                 }
-            }
-            Breakpoints();
-            $(window).on('tfsmartresize.themify_grid', function (e) {
-                if (!e.isTrigger) {
-                    Breakpoints();
-                }
+                $this.sticky( stickArgs );
             });
+        },
+        alertModule: function(el) {
+                var alertBox = $( '.module.module-alert',el );
+                if(el && el.hasClass('module-alert')){
+                    alertBox = alertBox.add(el);
+                }
+                var isNumber = function( number ) {
+                                return number && ! isNaN( parseFloat( number ) ) && isFinite( number );
+                        },
+                        setCookie = function( name, value, days ) {
+                                var date = new Date();
+                                date.setTime( date.getTime() + ( days * 24 * 60 * 60 * 1000 ) );
+
+                                document.cookie = name + "=" + value + ";expires=" + date.toUTCString() + ";path=/";
+                        },
+                        getCookie = function( name ) {
+                                name = name + '=';
+                                var ca = document.cookie.split( ';' );
+
+                                for( var i = 0,len=ca.length; i < len; ++i ) {
+                                        var c = ca[i];
+                                        while( c.charAt(0) === ' ' ) {
+                                                c = c.substring( 1 );
+                                        }
+                                        if ( c.indexOf( name ) === 0)  {
+                                                return c.substring( name.length, c.length );
+                                        }
+                                }
+                                return '';
+                        },
+                        closeAlert = function( $button ) {
+
+                                var buttonMessage, alertBox,
+                                        speed = 400;
+
+                                if( $button ) {
+                                        buttonMessage = $button.data( 'alert-message' );
+                                        alertBox = buttonMessage ? $button.closest( '.alert-inner' ) : $button.closest( '.module-alert' );
+                                } else {
+                                        alertBox = $( this );
+                                }
+
+                                alertBox.slideUp( speed, function() {
+                                        if( buttonMessage && ! alertBox.parent().find( '.alert-message' ).length ) {
+                                                var message = $( '<div class="alert-message" />' ).html( buttonMessage + '<div class="alert-close ti-close" />' );
+
+                                                alertBox.parent().html( message );
+                                                message.hide().slideDown( speed );
+                                        }
+                                } );
+                        };
+
+                alertBox.each( function() {
+                        var $this = $( this ),
+                                currentViews = 0,
+                                currentLimit = 0,
+                                alertID = $this.data( 'module-id' ),
+                                alertLimit = $this.data( 'alert-limit' ),
+                                autoClose = $this.data( 'auto-close' );
+
+                        if( isNumber( alertLimit ) ) {
+                                var cookies = getCookie( alertID );
+
+                                if( cookies ) {
+                                        cookies = cookies.split( '|' );
+
+                                        if( cookies[1] ) {
+                                                currentLimit = + cookies[0];
+                                                currentViews = + cookies[1];
+                                        }
+                                }
+
+                                if( alertLimit !== currentLimit ) {
+                                        setCookie( alertID, alertLimit + '|1', 365 );
+                                } else if( alertLimit > currentViews ) {
+                                        ++currentViews;
+                                        setCookie( alertID, alertLimit + '|' + currentViews, 365 );
+                                }
+                        }
+
+                        if(isNumber( autoClose ) ) {
+                                setTimeout( closeAlert.bind( this ), autoClose * 1000 );
+                        }
+                } );
+                Themify.body.on( 'click', '.module-alert .alert-close', function( e ) {
+                        e.preventDefault();
+                        closeAlert( $( this ) );
+                } );
         }
-    };
+	};
 
-    // Initialize
-    ThemifyBuilderModuleJs.init();
+	// Initialize
+	ThemifyBuilderModuleJs.init();
 
-}(jQuery, window, document));
+}( jQuery, window, document ) );

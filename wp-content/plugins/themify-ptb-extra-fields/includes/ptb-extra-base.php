@@ -204,7 +204,7 @@ class PTB_Extra_Base extends PTB_CMB_Base {
             $screens = apply_filters('ptb_screens', $screens, $screen);
             if (in_array($screen->id, $screens,true)) {
                 wp_enqueue_style(self::$plugin_name, PTB_Utils::enque_min($pluginurl . 'admin/css/ptb-extra.css'), array('ptb'), self::$version, 'all');
-                wp_enqueue_style(self::$plugin_name . '-timepicker', $pluginurl . 'admin/css/jquery-ui-timepicker.min.css', array(), self::$version, 'all');
+                wp_enqueue_style('themify-datetimepicker', $pluginurl . 'admin/css/jquery-ui-timepicker.min.css', array(), self::$version, 'all');
 
                 wp_enqueue_script(self::$plugin_name . '-video', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-video.js'), array('ptb'), self::$version, false);
                 wp_enqueue_script(self::$plugin_name . '-audio', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-audio.js'), array('ptb'), self::$version, false);
@@ -215,8 +215,8 @@ class PTB_Extra_Base extends PTB_CMB_Base {
                 wp_enqueue_script(self::$plugin_name . '-icon', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-icon.js'), array('ptb'), self::$version, false);
                 wp_enqueue_script(self::$plugin_name . '-file', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-file.js'), array('ptb'), self::$version, false);
                 wp_enqueue_script('jquery-ui-datepicker');
-                wp_enqueue_script(self::$plugin_name . '-timepicker', $pluginurl . 'admin/js/jquery-ui-timepicker.min.js', array('jquery-ui-datepicker'), self::$version, false);
-                wp_enqueue_script(self::$plugin_name . '-date', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-event-date.js'), array(self::$plugin_name . '-timepicker', 'ptb'), self::$version, false);
+                wp_enqueue_script('themify-datetimepicker', $pluginurl . 'admin/js/jquery-ui-timepicker.min.js', array('jquery-ui-datepicker'), self::$version, false);
+                wp_enqueue_script(self::$plugin_name . '-date', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-event-date.js'), array('themify-datetimepicker', 'ptb'), self::$version, false);
                 wp_enqueue_script(self::$plugin_name . '-map', PTB_Utils::enque_min($pluginurl . 'admin/js/ptb-extra-map.js'), array(), self::$version, true);
                 wp_localize_script(self::$plugin_name.'-map', 'ptb_extra', array(
                     'lng'=>PTB_Utils::get_current_language_code(),

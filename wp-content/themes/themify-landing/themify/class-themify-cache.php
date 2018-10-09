@@ -130,7 +130,7 @@ class TFCache {
             $active = !defined('THEMIFY_BUILDER_VERSION')?themify_get('setting-script_minification')==='enable':(themify_builder_get('builder_disable_cache')=== 'enable' && themify_builder_get('builder_is_active')=== 'enable');
         }
         return $active;
-    }
+	}
 
     /**
      * Check builder cache is disabled or builder is active or in admin
@@ -138,16 +138,15 @@ class TFCache {
      * return boolean
      */
     public static function is_builder_cache_activate() {
-        if(is_null(self::$turnoff_cache)){
-            if(self::is_cache_activate()){
-                self::$turnoff_cache  = (is_user_logged_in() && current_user_can('manage_options'))  || is_admin() || !self::check_builder_cache()? true : false;
-                self::$turnoff_cache  = apply_filters( 'themify_builder_is_cache_active', self::$turnoff_cache );
-            }
-            else{
-                self::$turnoff_cache  = true;
-            }
-        }
-        return self::$turnoff_cache;
+		if( is_null( self::$turnoff_cache ) ) {
+			if( self::is_cache_activate() ) {
+				self::$turnoff_cache = (is_user_logged_in() && current_user_can('manage_options')) || is_admin() || !self::check_builder_cache() || get_option( 'user_has_tb_frontend' ) ? true : false;
+				self::$turnoff_cache = apply_filters( 'themify_builder_is_cache_active', self::$turnoff_cache );
+			} else{
+				self::$turnoff_cache  = true;
+			}
+		}
+		return self::$turnoff_cache;
     }
     
     /**
@@ -169,7 +168,7 @@ class TFCache {
      * return boolean
     */
     public static function is_themify_file($file,$handler){
-        return strpos($handler, 'themify_cache_') === false && strpos($file, 'maps.google.com') === false && (strpos($handler, 'themify') !== false  || strpos($handler, 'builder-') !== false || strpos($file, THEME_URI) !== false || strpos($file, 'themify-') !== false);
+        return strpos($handler, 'themify_cache_') === false && strpos($file, 'maps.google.com') === false && (strpos($handler, 'themify') !== false  || strpos($handler, 'themify-builder-') !== false || strpos($file, THEME_URI) !== false || strpos($file, 'themify-') !== false);
     }
 
     /**

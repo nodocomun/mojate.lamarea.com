@@ -18,9 +18,7 @@ global $themify; ?>
 
 		<?php themify_content_before(); // hook ?>
 		<!-- content -->
-
 		<div id="content" class="clearfix">
-
 			<?php themify_content_start(); // hook ?>
 
 			<?php
@@ -61,7 +59,7 @@ global $themify; ?>
 
 						<?php wp_link_pages(array('before' => '<p class="post-pagination"><strong>'.__('Pages:','themify').'</strong> ', 'after' => '</p>', 'next_or_number' => 'number')); ?>
 
-						<?php edit_post_link(__('Edit','themify'), '[', ']'); ?>
+						<?php edit_post_link(__('Edit','themify'), '<span class="edit-button">[', ']</span>'); ?>
 
 						<!-- comments -->
 						<?php if(!themify_check('setting-comments_pages') && $themify->query_category == ""): ?>

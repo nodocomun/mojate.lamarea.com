@@ -43,16 +43,18 @@ if (TFCache::start_cache($mod_name, self::$post_id, array('ID' => $module_ID))):
 
     <!-- module video -->
     <div <?php echo self::get_element_attributes($container_props); ?>>
-
+        <!--insert-->
         <?php if ($fields_args['mod_title_video'] !== ''): ?>
             <?php echo $fields_args['before_title'] . apply_filters('themify_builder_module_title', $fields_args['mod_title_video'], $fields_args). $fields_args['after_title']; ?>
         <?php endif; ?>
 
         <div class="video-wrap"<?php echo '' !== $video_maxwidth ? ' style="max-width:' . $video_maxwidth . ';"' : ''; ?>>
-            <?php
-            $video = wp_oembed_get(esc_url($fields_args['url_video']));
+			<?php
+			$video = wp_oembed_get( esc_url( $fields_args['url_video'] ) );
             if ($video) {
-                $video = str_replace('frameborder="0"', '', $video);
+				$video = str_replace( 'frameborder="0"', '', $video );
+				$video = str_replace( '?&', '&', $video );
+
                 if ($fields_args['autoplay_video'] === 'yes') {
                     $video = preg_replace_callback('/src=["\'](http[^"\']*)["\']/', array('TB_Video_Module', 'autoplay_callback'), $video);
                 }
@@ -78,7 +80,7 @@ if (TFCache::start_cache($mod_name, self::$post_id, array('ID' => $module_ID))):
                         <?php if ($fields_args['title_link_video']) : ?>
                             <a href="<?php echo esc_url($fields_args['title_link_video']); ?>"><?php echo $fields_args['title_video']; ?></a>
                         <?php else: ?>
-                            <?php echo $fields_args['title_video']; ?>
+                        <?php echo $fields_args['title_video']; ?>
                         <?php endif; ?>
                     </h3>
                 <?php endif; ?>

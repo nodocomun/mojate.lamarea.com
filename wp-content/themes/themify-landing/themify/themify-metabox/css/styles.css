@@ -52,7 +52,6 @@
 ---------------------------------------------------------------*/
 #poststuff .inside .themify_write_panel {
 	border: 1px solid #dedede;
-	border-radius: 4px;	
 	margin: 0 0 5px 0;
 }
 
@@ -101,7 +100,7 @@ a.preview-icon {
 	z-index: 11;
 	background: rgba(0,0,0, .8);
 	color: #fff;
-	font-size: 11px;
+	font-size: 12px;
 	line-height: 1.1em;
 	padding: 4px 6px;
 	border-radius: 3px;
@@ -178,7 +177,6 @@ a.preview-icon {
 .hide-if {
 	opacity: 1;
 	visibility: visible;
-	max-height: 140px;
 	-webkit-transition: all .2s ease-in-out;
 	transition: all .2s ease-in-out;
 }
@@ -211,6 +209,58 @@ a.preview-icon {
 	width: 75%;
 	position: relative;
 }
+
+.themify_field-repeater {
+	width: 100%;
+}
+
+.themify-repeater-row {
+	position: relative;
+}
+
+.themify-repeater-remove-row {
+	position: absolute;
+	top: 20px;
+	right: 10px;
+	z-index: 9;
+}
+
+.themify-repeater-remove-row a {
+	display: block;
+	width: 16px;
+	height: 16px;
+	color: #dedede;
+}
+
+.themify-repeater-remove-row a:hover {
+	color: #9a9a9a;
+}
+
+.themify-repeater-remove-row a:before,
+.themify-repeater-remove-row a:after {
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 2px;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	margin: auto 0;
+	background: currentColor;
+	-webkit-transition: background 0.2s ease;
+	transition: background 0.2s ease;
+}
+
+.themify-repeater-remove-row a:before {
+	-webkit-transform: rotate(45deg);
+	transform: rotate(45deg);
+}
+
+.themify-repeater-remove-row a:after {
+	-webkit-transform: rotate(-45deg);
+	transform: rotate(-45deg);
+}
+
 .themify_field.themify_field-separator {
 	width: 100%;
 	float: none;
@@ -720,4 +770,9 @@ input.themifyDatePicker {
 }
 .themify_field-image_radio .tm-radio-option:hover .tm-option-title {
 	display: block;
+}
+
+#order_line_items figure.product-image {
+	margin: 0;
+	display: initial;
 }

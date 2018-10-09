@@ -19,7 +19,11 @@
 		var blog_url = themify_js_vars.blog_url,
 			$body = $('body'),
 			$wpbody = $('#wpbody'),
-			$themify = $('#themify');
+			$themify = $('#themify'),
+                        $panel = $('#setting>.subtabnav'),
+                        inputAuto = $( '#themify_404_page_autocomplete' ),
+                        need_login = true,
+                        $panelTop;
 
 		/*******************************************************************************/
 		/* Tab Events */
@@ -32,81 +36,93 @@
 			h = $this.outerHeight();
 			$(this).find('.subtab').css('minHeight', h);
 		});
-                
-                //Autocomplete for 404 pages
-                if($('#themify_404_page_autocomplete').length>0){
-                    var cache = {};
-                    $('#themify_404_page_autocomplete').autocomplete({
-                        minLength: 2,
-                        autoFocus: true,
-                        classes: {
-                            "ui-autocomplete": "highlight"
-                        },
-                        source: function( request, response ) {
-                            var term = request.term;
-                            if ( term in cache ) {
-                              response( cache[ term ] );
-                              return;
-                            }
-                             $.ajax( {
-                                 url: ajaxurl,
-                                 dataType: "json",
-                                 type:'POST',
-                                 data:{'term':term,'action':'themify_get_404_pages'},
-                                 success:function(data){
-                                    cache[ term ] = data;
-                                    response( data );
-                                 }
-                             });
-                          },
-                        select: function( event, ui ) {
-                            event.preventDefault();
-                            $('#themify_404_page_autocomplete').val(ui.item.label).next('input[type="hidden"]').val(ui.item.value);
-                              
-                          }
-                    }).focus(function () {
-                        $(this).autocomplete("search");
-                    });
-                }
-                
-                if(typeof ThemifyBuilderCommon==='undefined' && $('.themify_builder_lite').length>0){
 
-			if($('.themify_tooltip').length===0){
-				$('<div class="themify_tooltip">Upgrade to premium version to get this feature<div class="themify_tooltip_arrow"><div class="themify_tooltip_arrow_border"></div><div class="themify_tooltip_arrow_background"></div></div></div>').appendTo('body');
-			}
-			var height = $('.themify_tooltip').outerHeight(true)+10;
+		if( inputAuto.length>0) {
+			var cache = {},
+				inputWrapper = inputAuto.closest( '.themify_404_autocomplete_wrap' );
 
-			$('.themify_builder_lite,.themify_is_premium_module').each(function(){
-                            if($(this).children('.themify_builder_lite_modal').length===0){
-                                    $('<div class="themify_builder_lite_modal"></div>').appendTo($(this)).mouseenter(function(e){
-                                            var $ofset = $(this).offset();
-                                            $('.themify_tooltip').css({ top: $ofset.top -height, left: $ofset.left+100}).delay(500)
-                                            .queue(function(next) {
-                                                 $(this).stop().fadeIn('fast');
-                                                next();
-                                            });		
-                                    }).mouseleave(function() {
-                                            $('.themify_tooltip').hide();
-                                    });
-                            }
-			});
+			inputAuto.autocomplete( {
+				minLength: 2,
+				autoFocus: true,
+				classes: {
+					"ui-autocomplete": "highlight"
+				},
+				source: function( request, response ) {
+					var term = request.term;
+
+					inputWrapper.addClass( 'themify_autocomplete_run' );
+
+					if ( term in cache ) {
+						response( cache[ term ] );
+						inputWrapper.removeClass( 'themify_autocomplete_run' );
+						return;
+					}
+
+					$.ajax( {
+						url: ajaxurl,
+						dataType: "json",
+						type:'POST',
+						data: {'term': term, 'action': 'themify_get_404_pages'},
+						success: function( data ) {
+							cache[ term ] = data;
+							response( data.length ? data : [themify_js_vars.page_not_found] );
+							inputWrapper.removeClass( 'themify_autocomplete_run' );
+						}
+					});
+				},
+				select: function( event, ui ) {
+					event.preventDefault();
+					if( ui.item.value === themify_js_vars.page_not_found ) return;
+					inputAuto.val( ui.item.label ).next( 'input[type="hidden"]' ).val( ui.item.value );
+				},
+				change: function( event, ui ) {
+					if( ! ui.item && ! event.target.value ) {
+						inputAuto.next( 'input[type="hidden"]' ).val( '' );
+					}
+				}
+			} ).focus( function () {
+				$(this).autocomplete( 'search' );
+			} );
 		}
-
-
-		// fixed themify panel while scrolling (variables)
-		var $panel = $('#setting>.subtabnav');
-		var $panelTop;
 		if ($panel.length > 0) {
 			$panelTop =  $panel.offset().top - 32;
 		}
 
+		var expandableOptionsInit = false;
 		//
 		// Create Tabs
 		// Update address URL when Themify sub tab is clicked
 		var updateTabURL = function( e, ui ) { 
-			var el = e.type == 'tabscreate' ? window.location : ui.newTab.find('a')[0];
+			var el = e.type === 'tabscreate' ? window.location : ui.newTab.find('a')[0];
 			if ( 'replaceState' in history ) {
 				history.replaceState( null, null, el.hash || null );
+			}
+			if (e.type === 'tabscreate' && !expandableOptionsInit) {
+				expandableOptionsInit = true;
+				var subtabs = $('#themify div#setting div.subtab');
+				subtabs.each(function() {
+					var $this = $(this),
+					fieldset = $this.find('fieldset');
+					if (fieldset.length > 2) {
+						fieldset.children('.themify_panel_fieldset_wrap').hide();
+					} else {
+						fieldset.find('legend').addClass('themify_panel_fieldset_nocollapse');
+					}
+				});
+				subtabs.find('legend:not(.themify_panel_fieldset_nocollapse)').on('click', function() {
+					var $this = $(this),
+						$icon = $this.children('i');
+					if ($icon.hasClass('ti-plus')) {
+						$this.siblings().slideDown( "fast", function() {
+							$icon.removeClass('ti-plus').addClass('ti-minus');
+						});
+					} else {
+						$this.siblings().slideUp( "fast", function() {
+							$icon.removeClass('ti-minus').addClass('ti-plus');
+						});
+					}
+				});
+				
 			}
 		};
 
@@ -147,6 +163,103 @@
 
 		/*******************************************************************************/
 		/* Global Events  */
+
+		/**
+		 *Search in settings
+		 *
+		 */
+		$('.search-setting-holder .search-setting').on('input',function (e) {
+			return; // disabled
+			var $this = $(this),
+				searchText = $this.val(),
+				clearButton = $this.siblings('.clear-search');
+
+		 	if ( !$this.val().length ){
+				// hide clear button, remove all <mark> , close setting
+				clearButtonStatus();
+				clearMark( $('.subtab *:has(>mark) ',$themify) );
+				$('fieldset > legend i',$themify).removeClass('ti-minus').addClass('ti-plus');
+				$('fieldset > div',$themify).css('display','none');
+				 return;
+
+			}else if ( $this.val().length && !clearButton.hasClass('show') ){
+				 //show clear button
+				clearButtonStatus();
+		 	}
+
+			clearMark( $('.subtab *:has(>mark) ',$themify) );
+		 	var $activeTab = $('.ui-tabs-panel:visible','#setting');
+			var available_items = $activeTab.find('*:contains('+ searchText +')');
+			available_items.each(function () {
+
+				if ( $(this).find('*').length ){
+					return;
+				}
+
+				var src_str = $(this).html(),
+					term = searchText;
+
+				term = term.replace(/(\s+)/,"(<[^>]+>)*$1(<[^>]+>)*");
+				var pattern = new RegExp("("+term+")", "gmi");
+				src_str = src_str.replace(pattern, "<mark>$1</mark>");
+
+				$(this).html(src_str);
+
+			});
+
+			//close all setting
+			$('fieldset > legend i',$themify).removeClass('ti-minus').addClass('ti-plus');
+			$('fieldset > div',$themify).css('display','none');
+			// expand setting
+			$('fieldset:has(mark) ',$themify).each(function () {
+				$(this).find('> legend i').removeClass('ti-plus').addClass('ti-minus');
+				$(this).find('> div').css('display','block');
+			})
+
+		});
+
+		/**
+		 *  get all elements that contains <mark>
+		 *     and remove the <mark> from element
+		 */
+		function clearMark( markedElements ){
+
+			if( !markedElements.length )
+				return;
+
+			markedElements.each(function () {
+
+				var str = $(this).html();
+				str = str.replace(/<mark>/g,'').replace(/<\/mark>/g,'');
+				$(this).html(str);
+
+			});
+
+		}
+
+		/**
+		 *  Based on input value it shows or hide
+		 *  clear button
+		 */
+		function clearButtonStatus() {
+
+			var button = $('.search-setting-holder .clear-search');
+			if( button.prev().val().length < 1 ){
+				button.removeClass('show')
+			}else{
+				button.addClass('show')
+			}
+		}
+
+		$('.search-setting-holder .clear-search').click(function () {
+			var $input = $(this).prev();
+			$input.val('');
+			$input.trigger('input')
+		});
+
+		$('li.ui-state-default',$panel).click(function () {
+			$('.search-setting-holder .clear-search').click();
+		});
 
 		//
 		// Validation of Numbers
@@ -193,51 +306,37 @@
 			});
 		}
 		/**
-		 * Reset user styling
+		 * Reset user styling,settings
 		 */
-		$("#reset-styling").on('click', function(e){
+		$( '#reset-styling, #reset-setting' ).on( 'click', function( e ) {
 			e.preventDefault();
-			var reply = confirm(themify_lang.confirm_reset_styling);
-			if(reply){
+
+			var actionType = $( this ).prop( 'id' ) !== 'reset-setting' ? 'styling' : 'settings';
+
+			if( confirm( themify_lang[ 'confirm_reset_' + actionType ] ) ) {
 				showAlert();
-				var data = $themify.serialize();
-				$.post(
-					ajaxurl,
-					{
-						'action': 'themify_reset_styling',
-						'data'  : data,
-						'nonce' : themify_js_vars.nonce
-					},
-					function(){
+
+				$.post( ajaxurl,{
+					action: 'themify_reset_' + actionType,
+					data  : $themify.serialize(),
+					nonce : themify_js_vars.nonce
+				}, function() {
 						hideAlert();
-						window.location.reload(true);
+						window.location.reload( true );
 					}
 				);
 			}
 		});
-		/**
-		 * Reset user settings
-		 */
-		$("#reset-setting").on('click', function(e){
-			e.preventDefault();
-			var reply = confirm(themify_lang.confirm_reset_settings);
-			if(reply){
-				showAlert();
-				var data = $themify.serialize();
-				$.post(
-					ajaxurl,
-					{
-						'action': 'themify_reset_setting',
-						'data'  : data,
-						'nonce' : themify_js_vars.nonce
-					},
-					function(){
-						hideAlert();
-						window.location.reload(true);
-					}
-				);
-			}
-		});
+
+		// For FW updates, receive a message from themify.me and show it
+		if ( $( 'p.update:has(a.upgrade-framework, a.upgrade-theme)' ).length ) {
+			$.ajax( {
+				url : 'https://themify.me/public-api/update-message/index.txt',
+				success : function( message ) {
+					$( '<span class="updater-message"></span>' ).text( message ).appendTo( 'p.update:has(a.upgrade-framework, a.upgrade-theme)' );
+				}
+			} );
+		}
 
 		//
 		// Upgrade Theme / Framework
@@ -249,16 +348,42 @@
 				themeversion = '';
 			if($(this).hasClass('upgrade-theme')){
 				type = 'theme';
-				themeversion = "&themeversion=" + ( $('#themeversiontoreinstall').length == 1 ? $('#themeversiontoreinstall').val() : 'latest' );
+				themeversion = '&themeversion=' + ( $('#themeversiontoreinstall').length === 1 ? $('#themeversiontoreinstall').val() : 'latest' );
 			} else {
 				type = 'framework';
 			}
 			if ( reply ) {
-				if ( $(this).parent().hasClass('login') ) {
-					showLogin();
+                                need_login = $(this).parent().hasClass('login');
+                                var url = blog_url + 'wp-admin/admin.php?page=themify&action=upgrade&type=' + type + themeversion + '&login=false',
+                                    cookie_name = 'themeify_is_free_'+themify_js_vars.theme,
+                                    callback = function(data){
+                                        if(data==='free'){
+                                            window.location = url;
+                                        }
+                                        else if(data!=='error'){
+                                            showLogin();
+                                        }
+                                        themifySetCookie(cookie_name,data);
+                                    };
+				if (need_login) {
+                                    var saved = themifyGetCookie(cookie_name);
+                                    if(saved){
+                                        callback(saved);
+                                    }
+                                    else{
+                                        $.ajax({
+                                            url:ajaxurl,
+                                            type:'POST',
+                                            data:{
+                                                action:'themify_check_theme_is_free',
+                                                nonce: themify_js_vars.nonce
+                                            },
+                                            success:callback
+                                        });  
+                                    }
+					
 				} else {
-					//showAlert();
-					window.location = blog_url + "wp-admin/admin.php?page=themify&action=upgrade&type=" + type + themeversion + "&login=false";
+                                    window.location = url;
 				}
 			}
 		});
@@ -268,11 +393,10 @@
 		//
 		$wpbody.on('click', '.upgrade-login', function(e){
 			e.preventDefault();
+			var el = $(this),
+				username = el.parent().parent().find('.username').val(),
+				password = el.parent().parent().find('.password').val();
 			if ( ! $('.prompt-box').hasClass( 'update-plugin' ) ) {
-				var el = $(this),
-					username = el.parent().parent().find('.username').val(),
-					password = el.parent().parent().find('.password').val(),
-					login = $(".upgrade-theme").parent().hasClass('login');
 				if ( username != '' && password != '' ) {
 					hideLogin();
 					showAlert();
@@ -282,19 +406,19 @@
 							'action':'themify_validate_login',
 							'nonce': themify_js_vars.nonce,
 							'type':'theme',
-							'login':login,
+							'login':need_login,
 							'username':username,
 							'password':password
 						},
 						function(data){
 							data = $.trim(data);
-							if('subscribed' == data){
+							if('subscribed' === data){
 								hideAlert();
 								$('#themify_update_form').submit();
-							} else if('invalid' == data) {
+							} else if('invalid' === data) {
 								hideAlert('error');
 								showLogin('error');
-							} else if('unsuscribed' == data) {
+							} else if('unsuscribed' === data) {
 								hideAlert('error');
 								showLogin('unsuscribed');
 							}
@@ -305,13 +429,9 @@
 					showLogin('error');
 				}
 			} else if ( $('.prompt-box').hasClass( 'update-plugin' ) ) {
-				e.preventDefault();
-				var el = $(this),
-					username = el.parent().parent().find('.username').val(),
-					password = el.parent().parent().find('.password').val(),
-					_updater_el = $('.themify-builder-upgrade-plugin')
-					login = _updater_el.closest( '.notifications' ).find( '.update' ).hasClass('login');
 				if ( username !== '' && password !== '' ) {
+					
+					var _updater_el = $('.themify-builder-upgrade-plugin');
 					hideLogin();
 					showAlert();
 					$.post(
@@ -319,7 +439,7 @@
 						{
 							'action':'themify_builder_validate_login',
 							'type':'plugin',
-							'login':login,
+							'login':need_login,
 							'username':username,
 							'password':password,
 							'nicename_short': _updater_el.data( 'nicename_short' ),
@@ -330,9 +450,12 @@
 							if ( data === 'true' ) {
 								hideAlert();
 								$('#themify_update_form').append( '<input type="hidden" name="plugin" value="'+ _updater_el.data( 'plugin' ) +'" /><input type="hidden" name="package_url" value="'+ _updater_el.data( 'package_url' ) +'" />' ).submit();
-							} else if ( data === 'false' || 'invalid' === data ) {
+							} else if ( data === 'unsuscribed' ) {
 								hideAlert('error');
-								showLogin('error');
+								showLogin('unsuscribed', true);
+							} else {
+								hideAlert('error');
+								showLogin('error', true);
 							}
 						}
 					);
@@ -456,8 +579,7 @@
 				$parent.find("input[type='text']").attr('disabled', true).val('').addClass('opacity-7');
 				$('.plupload-button', $parent).hide();
 			}
-		});
-		$noBgImage.click(function(){
+		}).click(function(){
 			var $parent = $(this).parent();
 			if($(this).is(":checked")){
 				$parent.find("input[type='text']").attr('disabled', true).val('').addClass('opacity-7');
@@ -543,7 +665,7 @@
 		//
 		$('.select_position').change(function(){
 			var val = $('option:selected', this).val();
-			if(val == 'absolute' || val == 'fixed'){
+			if(val === 'absolute' || val === 'fixed'){
 				$(this).parent().parent().find('.position_display').show(200);
 			} else {
 				$(this).parent().parent().find('.position_display').hide(200);
@@ -554,7 +676,7 @@
 		// Font-Family
 		//
 		$('.fontFamily').change(function(){
-			if($('option:selected', this).val() == 'custom'){
+			if($('option:selected', this).val() === 'custom'){
 				$(this).parent().find('.value').show();
 				$(this).parent().find('.value input').val('');
 			} else {
@@ -566,7 +688,7 @@
 		// Site-Logo
 		//
 		$("input[name='setting-site_logo'], input[name='setting-footer_logo']").change(function(){
-			if($(this).val() == "image"){
+			if($(this).val() === "image"){
 				$(this).parent().parent().find(".image").fadeIn(200);
 				$(this).parent().parent().find(".image").css("display","block");
 			} else {
@@ -577,7 +699,7 @@
 		// Feature Box Image / Posts Display
 		//
 		$(".feature-box-display").click(function(){
-			if($(this).val() == "images"){
+			if($(this).val() === "images"){
 				$(this).parent().parent().find(".feature_box_posts").fadeOut(200, function(){
 					$(this).parent().parent().find(".feature_box_images").fadeIn(200);
 				});
@@ -603,7 +725,7 @@
 		// Feature Box Enabled Display
 		//
 		$(".feature_box_enabled_check").change(function(){
-			if('on' == $(this).val()){
+			if('on' === $(this).val()){
 				$(this).closest('fieldset').find(".feature_box_enabled_display").fadeIn(200);
 			} else {
 				$(this).closest('fieldset').find(".feature_box_enabled_display").fadeOut(200);
@@ -681,7 +803,7 @@
 		/*******************************************************************************/
 		/*	Display Alerts */
 
-		function showLogin(status){
+		function showLogin(status, updatePlugin){
 			var version = $('#themeversiontoreinstall').length == 1 ? $('#themeversiontoreinstall').val() : 'latest',
 				action = $('.prompt-box form').attr('action');
 			action = action.replace(/(themeversion=.*$)/ig, 'themeversion='+version);
@@ -689,18 +811,17 @@
 
 			$('.prompt-box .show-login').show();
 			$('.prompt-box .show-error').hide();
-			if('error' == status){
-				if($('.prompt-box .prompt-error').length == 0){
-					$('.prompt-box .prompt-msg').after('<p class="prompt-error">' + themify_lang.invalid_login + '</p>');
-				}
-			} else if ('unsuscribed' == status) {
-				if($('.prompt-box .prompt-error').length == 0) {
-					$('.prompt-box .prompt-msg').after('<p class="prompt-error">' + themify_lang.unsuscribed + '</p>');
-				}
-			} else {
-				$('.prompt-box .prompt-error').remove();
+			$('.prompt-box .prompt-error').remove();
+			if('error' === status){
+				$('.prompt-box .prompt-msg').after('<p class="prompt-error">' + themify_lang.invalid_login + '</p>');
+			} else if ('unsuscribed' === status) {
+				$('.prompt-box .prompt-msg').after('<p class="prompt-error">' + themify_lang.unsuscribed + '</p>');
 			}
-			$('.prompt-box').removeClass( 'update-plugin' );
+			if ( true === updatePlugin ) {
+				$('.prompt-box').addClass( 'update-plugin' );
+			} else {
+				$('.prompt-box').removeClass( 'update-plugin' );
+			}
 			$(".overlay, .prompt-box").fadeIn(500);
 		}
 		function hideLogin(){
@@ -716,7 +837,7 @@
 			$(".alert").addClass("busy").fadeIn(800);
 		}
 		function hideAlert(status){
-			if(status == 'error'){
+			if(status === 'error'){
 				status = 'error';
 				showErrors();
 			} else {
@@ -738,12 +859,12 @@
 		/*	Is Numeric Function */
 
 		function is_numeric(string){
-			var ValidChars = " 0123456789.+-";
-			var IsNumber = true;
-			var Char;
-			for (var i = 0; i < string.length && IsNumber == true; i++){
+			var ValidChars = " 0123456789.+-",
+                            IsNumber = true,
+                            Char;
+			for (var i = 0; i < string.length && IsNumber === true; i++){
 				Char = string.charAt(i);
-				if(ValidChars.indexOf(Char) == -1){
+				if(ValidChars.indexOf(Char) === -1){
 					IsNumber = false;
 				}
 			}
@@ -801,10 +922,10 @@
 				});
 				$socialLinkIDs.val(JSON.stringify(field_ids));
 			}
-		});
+		})
 
 		// Remove Link
-		$socialLinksWrapper.on('click', '.remove-item', function(event) {
+		.on('click', '.remove-item', function(event) {
 			event.preventDefault();
 			var field_ids = JSON.parse($socialLinkIDs.val()),
 				removeId = $(this).data('removelink');
@@ -906,7 +1027,7 @@
 				);
 			}
 		});
-				$themify.on('change', '.google_font_subset', function(){
+				$themify.on('change', '.google_font_subset, .themify_multiselect', function(){
 			var $vals = $(this).val();
 						if($vals){
 							$vals= $vals.join(',');
@@ -997,15 +1118,11 @@
 				}
 			});
 			return false;
-		});
-
-		$body.on('click', '.themify-visibility-toggle', function(){
+		}).on('click', '.themify-visibility-toggle', function(){
 			Themify_Visibility.target = $(this).next();
 			Themify_Visibility.showLightbox();
 			return false;
-		});
-
-		$body.on('click', '#themify_lightbox_visibility .close_lightbox, #themify_lightbox_overlay', function(){
+		}).on('click', '#themify_lightbox_visibility .close_lightbox, #themify_lightbox_overlay', function(){
 			Themify_Visibility.closeLightbox();
 		});
 
@@ -1014,9 +1131,7 @@
 			Themify_Visibility.target.val( data );
 			Themify_Visibility.closeLightbox();
 			return false;
-		});
-
-		$lightbox.on('click', '.uncheck-all', function(){
+		}).on('click', '.uncheck-all', function(){
 			$('input:checkbox', $lightbox).removeAttr( 'checked' );
 			return false;
 		});
@@ -1071,7 +1186,7 @@
 		$( '.required-addons.themify-modal' ).appendTo( 'form#themify' );
 
 		// Skin selection in the Demo Import notice box
-		$( 'body' ).on( 'click', '#demo-import-notice .skin-preview', function(e){
+		$body.on( 'click', '#demo-import-notice .skin-preview', function(e){
 			if( ! $( e.target ).parent().hasClass( 'view-demo' ) ) {
 				e.preventDefault();
 			}
@@ -1084,31 +1199,31 @@
 			$( '#skins .skin-preview.selected .skin-demo-import' ).click();
 		} );
 
-		$( 'body' ).on( 'click', '#skins .skin-demo-import', function(e){
+		$body.on( 'click', '#skins .skin-demo-import', function(e){
 			e.preventDefault();
 			var $this = $( this ),
 				$preview = $this.closest( '.skin-preview' ).find( '.skin-demo-content' ),
-				skin_name = $preview.data( 'skin' );
-			var do_import = function(){
-				$.ajax({
-					url: ajaxurl,
-					data: {
-						action: 'themify_import_sample_content',
-						skin : skin_name,
-						nonce: themify_js_vars.nonce
-					},
-					type: 'POST',
-					success: function(data){
-					},
-					beforeSend: function(){
-						showAlert();
-					},
-					complete: function(){
-						hideAlert();
-						window.location = themify_js_vars.admin_url;
-					}
-				} );
-			}
+				skin_name = $preview.data( 'skin' ),
+                                do_import = function(){
+                                        $.ajax({
+                                                url: ajaxurl,
+                                                data: {
+                                                        action: 'themify_import_sample_content',
+                                                        skin : skin_name,
+                                                        nonce: themify_js_vars.nonce
+                                                },
+                                                type: 'POST',
+                                                success: function(data){
+                                                },
+                                                beforeSend: function(){
+                                                        showAlert();
+                                                },
+                                                complete: function(){
+                                                        hideAlert();
+                                                        window.location = themify_js_vars.admin_url;
+                                                }
+                                        } );
+                                };
 			
 			var requirements = $( '#themify .required-addons[data-skin="' + skin_name + '"]:first' );
 			if( requirements.length ) {
@@ -1154,8 +1269,8 @@
 
 		// Import Demo button in main tab
 		$( '#demo-import .import-sample-content' ).click(function(){
-			var $button = $(this);
-			var required_addons = $( '#themify' ).find( '.required-addons' );
+			var $button = $(this),
+                            required_addons = $( '#themify' ).find( '.required-addons' );
 
 			if( $button.hasClass( 'disabled' ) ) {
 				return false;
@@ -1391,12 +1506,12 @@
 	}
 	function themifyGetCookie(name) {
 		'use strict';
-		name = name + "=";
+		name = name + '=';
 		var ca = document.cookie.split(';');
 		for(var i=0; i < ca.length; i++) {
 			var c = ca[i];
 			while (' ' == c.charAt(0)) c = c.substring(1,c.length);
-			if (0 == c.indexOf(name)) return c.substring(name.length,c.length);	}
+			if (0 === c.indexOf(name)) return c.substring(name.length,c.length);	}
 		return null;
 	}
 
@@ -1405,7 +1520,7 @@
 			return $(this).data('show-if-element');
 		}).get().filter(function(itm, i, selectors){
 		
-			return i == selectors.indexOf( itm );
+			return i === selectors.indexOf( itm );
 		});
 
 		$.each(selectors, function(i, selector){
@@ -1425,17 +1540,18 @@
 
 			var $target_element = $(this),
 				$target_value   = $target_element.data( 'show-if-value' ),
-				$source_element = $( $target_element.data( 'show-if-element' ).toString() );
+				$source_element = $( $target_element.data( 'show-if-element' ).toString() ),
+				$source_element_value = '';
 
-			if ( $source_element.is(':checkbox')) {
-                            var $source_element_value =  $source_element.is(':checked')  ? 'true' : 'false' ;
-
-			}
-			else {
-                            var $source_element_value = $source_element.val().trim();
+			if ( $source_element.is(':checkbox') ) {
+				$source_element_value = $source_element.is(':checked') ? 'true' : 'false' ;
+			} else if( $source_element.is(':radio') ) {
+				$source_element_value = $source_element.filter( ':checked' ).val();
+			} else {
+				$source_element_value = $source_element.val().trim();
 			}
 			
-			$target_value = $.isArray($target_value)?$target_value:[$target_value.toString()];
+			$target_value = $.isArray($target_value) ? $target_value : [$target_value.toString()];
 			
 			if( 'undefined' !== typeof( $source_element_value ) && $.inArray($source_element_value,$target_value)!==-1){
 				// Show
@@ -1453,10 +1569,8 @@
 		if( previewIcon.length ) {		
 			previewIcon.each( function() {		
 				var $item = $( this ),		
-					title = $item.attr( 'title' );		
-		
-				$item.removeAttr( 'title' );		
-				$item.append( '<span class="tm-option-title-fw">' + title + '</span>' );		
+                                    title = $item.attr( 'title' );		
+				$item.removeAttr( 'title' ).append( '<span class="tm-option-title-fw">' + title + '</span>' );		
 			} );		
 		}
 	} );

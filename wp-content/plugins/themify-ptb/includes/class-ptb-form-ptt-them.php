@@ -422,7 +422,7 @@ class PTB_Form_PTT_Them {
                 $post_type[$this->type]['layout'] = json_decode($layout, true);
             }
 			
-            $_keys = $this->type == PTB_Post_Type_Template::ARCHIVE ? array('layout_post', 'offset_post', 'orderby_post', 'order_post', 'pagination_post') : array('navigation_post','same_category','same_tax');
+            $_keys = $this->type == PTB_Post_Type_Template::ARCHIVE ? array('layout_post', 'offset_post', 'orderby_post', 'order_post', 'pagination_post','masonry') : array('navigation_post','same_category','same_tax');
             foreach ($_keys as $key) {
                 $fieldname = $this->get_field_name($key);
                 if (isset($data[$fieldname])) {
@@ -797,7 +797,7 @@ class PTB_Form_PTT_Them {
                                                         if($icon_pos==='before_text_before'){
                                                             PTB_CMB_Base::get_icon($icon, $icon_pos);
                                                         }
-                                                        if (isset($module['text_before'][$lang])) {
+                                                        if (isset($module['text_before'][$lang]) && $type != 'title') {
                                                             PTB_CMB_Base::get_text_after_before($module['text_before'][$lang], true);
                                                         }
                                                         if($icon_pos==='after_text_before'){
@@ -828,7 +828,7 @@ class PTB_Form_PTT_Them {
             <?php endforeach; ?>
             <?php if ($is_single && !empty($template['ptb_ptt_navigation_post'])): ?>
                 <?php $is_same_cat = !empty($template['ptb_ptt_same_category']);
-                      $same_tax = $is_same_cat && !empty($template['ptb_ptt_same_tax'])?$template['ptb_ptt_same_tax']:'';
+                      $same_tax = $is_same_cat && !empty($template['ptb_ptt_same_tax'])?$template['ptb_ptt_same_tax']:$template['ptb_ptt_same_tax'];
                 ?>
                 <div class="ptb-post-nav clearfix">
                     <?php previous_post_link('<span class="ptb-prev">%link</span>', '<span class="ptb-arrow">' . _x('&laquo;', 'Previous entry link arrow', 'ptb') . '</span> %title', $is_same_cat,'',$same_tax) ?>

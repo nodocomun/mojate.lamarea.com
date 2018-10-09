@@ -3,7 +3,7 @@
  * Custom Post Type edit or add form
  *
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB

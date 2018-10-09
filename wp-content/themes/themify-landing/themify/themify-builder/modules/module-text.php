@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  */
 class TB_Text_Module extends Themify_Builder_Component_Module {
 	function __construct() {
+                self::$texts['content_text'] =  __('Text content', 'themify');
 		parent::__construct(array(
 			'name' => __('Text', 'themify'),
 			'slug' => 'text'
@@ -22,7 +23,8 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 				'label' => __('Module Title', 'themify'),
 				'class' => 'large',
 				'render_callback' => array(
-					'binding' => 'live'
+                                    'binding' => 'live',
+                                    'live-selector'=>'.module-title'
 				)
 			),
 			array(
@@ -32,6 +34,16 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 				'render_callback' => array(
 					'binding' => 'live'
 				)
+			),
+			array(
+				'id' => 'text_drop_cap',
+				'type' => 'checkbox',
+				'label' => __('Drop-Cap','themify'),
+				'help' => false,
+				'wrap_with_class' => '',
+				'options' => array(
+							array( 'name' => 'dropcap', 'value' =>__('Enable drop-cap', 'themify') )
+						)
 			),
 			// Additional CSS
 			array(
@@ -43,7 +55,7 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 				'type' => 'text',
 				'label' => __('Additional CSS Class', 'themify'),
 				'class' => 'large exclude-from-reset-field',
-				'help' => sprintf( '<br/><small>%s</small>', __( 'Add additional CSS class(es) for custom styling', 'themify' ) ),
+				'help' => sprintf( '<br/><small>%s</small>', __( 'Add additional CSS class(es) for custom styling (<a href="https://themify.me/docs/builder#additional-css-class" target="_blank">learn more</a>).', 'themify' ) ),
 				'render_callback' => array(
 					'binding' => 'live'
 				)
@@ -53,7 +65,7 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 
 	public function get_default_settings() {
 		return array(
-			'content_text' => esc_html__( 'Text content', 'themify' )
+			'content_text' =>self::$texts['content_text']
 		);
 	}
 
@@ -65,9 +77,11 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 			self::get_image('.module-text'),
 			self::get_color('.module-text', 'background_color',__( 'Background Color', 'themify' ),'background-color'),
 			self::get_repeat('.module-text'),
+			self::get_position('.module-text'),
 			// Font
 			self::get_seperator('font',__('Font', 'themify')),
 			self::get_font_family(array( '.module-text', '.module-text h1', '.module-text h2', '.module-text h3:not(.module-title)', '.module-text h4', '.module-text h5', '.module-text h6' )),
+			self::get_element_font_weight(array( '.module-text', '.module-text h1', '.module-text h2', '.module-text h3:not(.module-title)', '.module-text h4', '.module-text h5', '.module-text h6' )),
 			self::get_color(array( '.module-text', '.module-text h1', '.module-text h2', '.module-text h3:not(.module-title)', '.module-text h4', '.module-text h5', '.module-text h6' ),'font_color',__('Font Color', 'themify')),
 			self::get_font_size('.module-text'),
 			self::get_line_height('.module-text'),
@@ -75,6 +89,7 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 			self::get_text_align('.module-text'),
 			self::get_text_transform('.module-text'),
 			self::get_font_style('.module-text'),
+			self::get_text_decoration('.module-text','text_decoration_regular'),
 			// Paragraph
 			self::get_seperator('paragraph',__('Paragraph', 'themify')),
 			self::get_heading_margin_multi_field( '.module-text', 'p', 'top' ),
@@ -84,6 +99,11 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 			self::get_color( '.module-text a','link_color'),
 			self::get_color('.module-text a:hover','link_color_hover',__('Color Hover', 'themify')),
 			self::get_text_decoration('.module-text a'),
+			// Multi-column
+			self::get_seperator('multi_columns', __('Multi-columns', 'themify')),
+			self::get_multi_columns_count( '.module-text' ),
+			self::get_multi_columns_gap( '.module-text' ),
+			self::get_multi_columns_divider( '.module-text' ),
 			// Padding
 			self::get_seperator('padding',__('Padding', 'themify')),
 			self::get_padding('.module-text'),
@@ -94,20 +114,51 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 			self::get_seperator('border',__('Border', 'themify')),
 			self::get_border('.module-text')
 		);
-                $heading = array();
-                for($i=1;$i<=6;++$i){
-                    $h = 'h'.$i;
-                    $heading = array_merge($heading,array( 
-                                    self::get_seperator('font',sprintf(__('Heading %s Font', 'themify'),$i),$i!==1),
-                                    self::get_font_family('.module.module-text '.$h.($i===3?':not(.module-title)':''),'font_family_'.$h),
-                                    self::get_color('.module.module-text '.$h.($i===3?':not(.module-title)':''),'font_color_'.$h,__('Font Color', 'themify')),
-                                    self::get_font_size('.module-text '.$h,'font_size_'.$h),
-                                    self::get_line_height('.module-text '.$h,'line_height_'.$h),
-                                    // Heading  Margin
-                                    self::get_heading_margin_multi_field('.module-text', $h, 'top' ),
-                                    self::get_heading_margin_multi_field('.module-text', $h, 'bottom' ),
-                            ));
-                }
+
+		$heading = array();
+
+		for($i=1;$i<=6;++$i){
+			$h = 'h'.$i;
+			$heading = array_merge($heading,array( 
+				self::get_seperator('font',sprintf(__('Heading %s Font', 'themify'),$i),$i!==1),
+				self::get_font_family('.module.module-text '.$h.($i===3?':not(.module-title)':''),'font_family_'.$h),
+				self::get_element_font_weight('.module.module-text '.$h.($i===3?':not(.module-title)':''),'font_weight_'.$h),
+				self::get_color('.module.module-text '.$h.($i===3?':not(.module-title)':''),'font_color_'.$h,__('Font Color', 'themify')),
+				self::get_font_size('.module-text '.$h,'font_size_'.$h),
+				self::get_line_height('.module-text '.$h,'line_height_'.$h),
+				self::get_letter_spacing('.module-text '.$h,'letter_spacing_'.$h),
+				self::get_text_transform('.module-text '.$h,'text_transform_'.$h),
+				self::get_font_style('.module-text '.$h,'font_style_'.$h,'font_weight_'.$h),
+				// Heading  Margin
+				self::get_heading_margin_multi_field('.module-text', $h, 'top' ),
+				self::get_heading_margin_multi_field('.module-text', $h, 'bottom' ),
+			));
+		}
+		
+		$dropcap = array(
+			// Background
+			self::get_seperator('dropcap_bacground',__( 'Background', 'themify' ),false),
+			self::get_color('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter', 'dropcap_background_color',__( 'Background Color', 'themify' ),'background-color'),
+			// Font
+			self::get_seperator('font',__('Font', 'themify')),
+			self::get_font_family('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','font_dropcap_family'),
+			self::get_element_font_weight('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_font_weight'),
+			self::get_color('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_font_color',__('Font Color', 'themify')),
+			self::get_font_size('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter', 'dropcap_font_size'),
+			self::get_line_height('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter', 'dropcap_line_height'),
+			self::get_text_transform('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter', 'dropcap_letter_transform'),
+			self::get_font_style('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter', 'font_dropcap','font_dropcap_bold'),
+            self::get_text_decoration('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_decoration_regular'),
+			// Padding
+			self::get_seperator('padding',__('Padding', 'themify')),
+			self::get_padding('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_padding'),
+			// Margin
+			self::get_seperator('margin',__('Margin', 'themify')),
+			self::get_margin('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_margin'),
+			// Border
+			self::get_seperator('border',__('Border', 'themify')),
+			self::get_border('.tb_module_front.tb_text_dropcap .tb_action_wrap + :first-letter,.tb_text_dropcap > :first-child:first-letter','dropcap_border')
+		);
 
 		return array(
 			array(
@@ -115,33 +166,58 @@ class TB_Text_Module extends Themify_Builder_Component_Module {
 				'id' => 'module-styling',
 				'tabs' => array(
 					'general' => array(
-                                            'label' => __('General', 'themify'),
-                                            'fields' => $general
+					'label' => __('General', 'themify'),
+					'fields' => $general
 					),
-                                        'module-title' => array(
+						'module-title' => array(
 						'label' => __( 'Module Title', 'themify' ),
-						'fields' => self::module_title_custom_style( $this->slug )
+						'fields' => $this->module_title_custom_style()
 					),
 					'heading' => array(
 						'label' => __('Heading', 'themify'),
 						'fields' => $heading
+					),
+					'dropcap' => array(
+						'label' => __('Drop-Cap', 'themify'),
+						'fields' => $dropcap
 					)
 				)
-			),
+			)
 		);
 
 	}
 
 	protected function _visual_template() {
 		$module_args = self::get_module_args();?>
-		<div class="module module-<?php echo $this->slug; ?> {{ data.add_css_text }}">
+		<div class="module module-<?php echo $this->slug; ?> {{ data.add_css_text }} <# ! _.isUndefined( data.text_drop_cap ) && data.text_drop_cap === 'dropcap' ? print( 'tb_text_dropcap' ) : ''; #>">
+			 <!--insert-->
 			<# if ( data.mod_title_text ) { #>
 			<?php echo $module_args['before_title']; ?>{{{ data.mod_title_text }}}<?php echo $module_args['after_title']; ?>
 			<# } #>
-
-			{{{ data.content_text }}}
+			{{{ data.content_text?data.content_text.replace(/(<|&lt;)!--more(.*?)?--(>|&gt;)/, '<span class="tb-text-more-link-indicator"><span>'):'' }}}
 		</div>
 	<?php
+	}
+
+	/**
+	 * Generate read more link for text module
+	 *
+	 * @param string $content
+	 * @return string generated load more link in the text.
+	 */
+	public static function generate_read_more( $content )
+	{
+		if (preg_match( '/(<|&lt;)!--more(.*?)?--(>|&gt;)/', $content, $matches)) {
+			$text = trim($matches[2]);
+			if (!empty($text)) {
+				$read_more_text = $text;
+			} else {
+				$read_more_text = apply_filters( 'themify_builder_more_text', __( 'More ', 'themify' ) );
+			}
+			$content = str_replace( $matches[0], '<div><span class="more-text" style="display:none">', $content );
+			$content .= '</span></div><a href="#" class="tb-text-more-link module-text-more tb-more-tag">' . $read_more_text . '</a>';
+		}
+		return $content;
 	}
 }
 

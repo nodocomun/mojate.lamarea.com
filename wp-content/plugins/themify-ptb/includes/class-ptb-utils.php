@@ -5,7 +5,7 @@
  *
  * This class helps to manipulate with arrays
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -205,7 +205,7 @@ class PTB_Utils {
             $lng = self::get_current_language_code();
         }
         $value = '';
-        if (isset($label[$lng]) && $label[$lng]) {
+        if (!empty($label[$lng])) {
             $value = $label[$lng];
         } else {
             static $default_lng=false;
@@ -617,5 +617,15 @@ class PTB_Utils {
         global $wpdb;
         $attachment = $wpdb->get_col($wpdb->prepare("SELECT ID FROM $wpdb->posts WHERE guid='%s' LIMIT 1", $image_url )); 
         return isset($attachment[0])?$attachment[0]:false; 
+    }
+    
+    public static function get_unique_slug(array $array,$slug){
+        $i=1;
+        $reserved = self::get_reserved_terms();
+        while(isset($array[$slug]) || in_array($slug,$reserved,true)){
+            $slug.='-'.$i;
+            ++$i;
+        }
+        return $slug;
     }
 }

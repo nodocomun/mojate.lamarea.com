@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display File field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-file.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 if (!empty($meta_data[$args['key']])) {
 
     $lightbox = isset($data['file_link']) && $data['file_link'] === 'lightbox';

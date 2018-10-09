@@ -1,4 +1,14 @@
-<?php if (!empty($args['options'])): ?>
+<?php
+/**
+ * Template to display Progress Bar field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-progress_bar.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
+if (!empty($args['options'])): ?>
     <div class="ptb_extra_progress_<?php echo $args['orientation'] ?>">
         <?php foreach ($args['options'] as $opt): ?>
             <?php

@@ -1,15 +1,15 @@
 <?php
 /**
  * Plugin Name:       PTB Map View
- * Plugin URI:        http://themify.me
- * Description:       This addon allow to show posts on the google map
- * Version:           1.2.0
+ * Plugin URI:        https://themify.me/ptb-addons/map-view
+ * Description:       This PTB addon allows to show custom post types on Google Maps.
+ * Version:           1.2.1
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb_map
  * Domain Path:       /languages
  *
- * @link              http://themify.me
+ * @link              https://themify.me
  * @since             1.0.0
  * @package           PTB
  *

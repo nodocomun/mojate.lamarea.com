@@ -54,11 +54,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
      * @var array $meta_box
      */
     protected $meta_box = array();
-
-    /**
-     * Flag if assets are loaded on frontend
-     */
-    private $_assets_done = false;
+    
 
     /**
      * Constructor.
@@ -104,7 +100,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
 
         foreach ($options as $field) {
             // sanitization, check for existence of needed keys
-            if (!( isset($field['type']) && isset($field['id']) && isset($module[$field['id']]) )) {
+            if (!isset($field['type'],$field['id'],$module[$field['id']])) {
                 continue;
             }
             // text, textarea, and wp_editor field types
@@ -159,40 +155,39 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         if (!empty($_assets)) {
             $assets[$this->slug] = $_assets;
         }
-
         return $assets;
     }
 
     public function do_assets() {
         $output = '';
-        if ($this->_assets_done) {
-            return $output;
-        }
-
-        $assets = $this->get_assets();
-        if (!empty($assets['css'])) {
-            foreach ((array) $assets['css'] as $stylesheet) {
-                $ver = isset($assets['ver']) ? '?ver=' . $assets['ver'] : '';
-                $link_tag = "<link id='{$this->slug}-css' rel='stylesheet' href='{$stylesheet}{$ver}' type='text/css' />";
-                $output .= '<script type="text/javascript">
-							if( ! jQuery( "#' . $this->slug . '-css" ).length ) jQuery( "body" ).append( "' . $link_tag . '" );
-							</script>';
+        static $done = false;
+        if ($done===false) {
+            $assets = $this->get_assets();
+            if (!empty($assets['css'])) {
+                foreach ((array) $assets['css'] as $stylesheet) {
+                    $ver = isset($assets['ver']) ? '?ver=' . $assets['ver'] : '';
+                    $link_tag = "<link id='{$this->slug}-css' rel='stylesheet' href='{$stylesheet}{$ver}' type='text/css' />";
+                    $output .= '<script type="text/javascript">document.body.insertAdjacentHTML( "beforebegin", "' . $link_tag . '" )</script>';
+                }
             }
+            $done = true;
         }
-
-        $this->_assets_done = true;
-
         return $output;
     }
 
-    public static function render($slug, $mod_id, $builder_id, $settings) {
+    public function render($slug, $mod_id, $builder_id, $settings, $all_data = array() ) {
         $template = in_array($slug, array('highlight', 'testimonial', 'post', 'portfolio'), true) ? 'blog' : $slug;
-        return self::retrieve_template('template-' . $template . '.php', array(
-                    'module_ID' => $mod_id,
-                    'mod_name' => $slug,
-                    'builder_id' => $builder_id,
-                    'mod_settings' => $settings
-                        ), '', '', false);
+        
+        if ( isset( $all_data['element_id'] ) ) 
+            $settings['element_id'] = $all_data['element_id'];
+
+        $vars = array(
+            'module_ID' => $mod_id,
+            'mod_name' => $slug,
+            'builder_id' => $builder_id,
+            'mod_settings' => $settings
+        );
+        return self::retrieve_template('template-' . $template . '.php', $vars, '', '', false);
     }
 
     /**
@@ -203,8 +198,8 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
      */
     public function initialize_cpt($args) {
         $this->cpt_args = $args;
-        add_action( 'init', array( $this, 'load_cpt' ), 12 );
-        add_filter('post_updated_messages', array($this, 'cpt_updated_messages'));
+        add_action( 'init', array($this, 'load_cpt'), 40 );
+        add_filter( 'post_updated_messages', array($this, 'cpt_updated_messages') );
     }
 
     /**
@@ -336,6 +331,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         );
 
         register_taxonomy($this->slug . '-category', array($this->slug), $options);
+        add_filter('manage_edit-' . $this->slug . '-category_columns', array($ThemifyBuilder, 'taxonomy_header'), 10, 2);
         add_filter('manage_' . $this->slug . '-category_custom_column', array($ThemifyBuilder, 'taxonomy_column_id'), 10, 3);
 
         // admin column custom taxonomy
@@ -392,27 +388,23 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         return $this->slug;
     }
 
-    public function print_template() {
+    public function print_template($echo=false) {
         ob_start();
-
-		$template_file = Themify_Builder_Component_Base::locate_template( 'template-' . $this->slug . '-visual.php' );
-
-		if( file_exists( $template_file ) ) {
-			include $template_file;
-		} else {
-			$this->_visual_template();
-		}
-
-        $content_template = ob_get_clean();
-
-        if (empty($content_template)) {
-            return;
+        $template_file = Themify_Builder_Component_Base::locate_template( 'template-' . $this->slug . '-visual.php' );
+        if( file_exists( $template_file ) ) {
+            include $template_file;
+        } else {
+            $this->_visual_template();
         }
-        ?>
-        <script type="text/html" id="tmpl-builder-<?php echo $this->slug; ?>-content">
-        <?php echo $content_template; ?>
-        </script>
-        <?php
+        $content_template = ob_get_clean();
+        if (empty($content_template)) {
+            return false;
+        }
+        $output = '<script type="text/html" id="tmpl-builder-'.$this->slug.'-content">'.$content_template.'</script>';
+        if(!$echo){
+            return $output;
+        }
+        echo $output;
     }
 
     protected function _visual_template() {
@@ -424,7 +416,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
     }
 
     public function get_visual_type() {
-        return false;
+        return 'live';
     }
 
     protected static function get_module_args() {
@@ -439,42 +431,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
     }
 
     private function get_animation() {
-        static $animation = null;
-        if ($animation === null) {
-            $animation = array(
-                array(
-                    'type' => 'separator',
-                    'meta' => array('html' => '<h4>' . esc_html__('Appearance Animation', 'themify') . '</h4>')
-                ),
-                array(
-                    'id' => 'multi_Animation Effect',
-                    'type' => 'multi',
-                    'label' => __('Effect', 'themify'),
-                    'fields' => array(
-                        array(
-                            'id' => 'animation_effect',
-                            'type' => 'animation_select',
-                            'label' => __('Effect', 'themify')
-                        ),
-                        array(
-                            'id' => 'animation_effect_delay',
-                            'type' => 'text',
-                            'label' => __('Delay', 'themify'),
-                            'class' => 'xsmall',
-                            'description' => __('Delay (s)', 'themify')
-                        ),
-                        array(
-                            'id' => 'animation_effect_repeat',
-                            'type' => 'text',
-                            'label' => __('Repeat', 'themify'),
-                            'class' => 'xsmall',
-                            'description' => __('Repeat (x)', 'themify')
-                        )
-                    )
-                )
-            );
-        }
-        return $animation;
+       return Themify_Builder_Model::get_animation();
     }
 
     private function get_form_settings() {
@@ -503,31 +460,26 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         $module_form_settings = $this->get_form_settings();
         ?>
         <form id="tb_module_settings">
-
-            <div id="themify_builder_lightbox_options_tab_items">
-
+            <div id="tb_lightbox_options_tab_items">
                 <?php
                 foreach ($module_form_settings as $setting_key => $setting):
                     if (!empty($setting['options'])):
                         ?>
                         <li <?php if ($setting_key === 'setting'): ?>class="current"<?php endif; ?>>
-                            <a href="#themify_builder_options_<?php echo esc_attr($setting_key); ?>"><?php echo esc_attr($setting['name']); ?></a>
+                            <a href="#tb_options_<?php echo $setting_key; ?>"><?php echo esc_attr($setting['name']); ?></a>
                         </li>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
-
-            <?php $this->get_save_btn();?>
-
+            <?php $this->get_save_btn( esc_html__( 'Done', 'themify' ) ); ?>
             <?php foreach ($module_form_settings as $setting_key => $setting): ?>
-
-                <div id="themify_builder_options_<?php echo $setting_key; ?>" class="themify_builder_options_tab_wrapper">
+                <div id="tb_options_<?php echo $setting_key; ?>" class="tb_options_tab_wrapper">
                     <?php
                     if ($setting_key === 'styling') {
                         self::get_breakpoint_switcher();
                     }
                     ?>
-                    <div class="themify_builder_options_tab_content">
+                    <div class="tb_options_tab_content">
                         <?php
                         if (!empty($setting['options'])) {
 
@@ -538,7 +490,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
                                 if ('styling' === $setting_key) {
                                     ?>
                                     <p>
-                                        <a href="#" class="reset-styling" data-reset="module">
+                                        <a href="#" class="reset-styling">
                                             <i class="ti-close"></i>
                                             <?php _e('Reset Styling', 'themify') ?>
                                         </a>
@@ -550,11 +502,8 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
                         ?>
                     </div>
                 </div>
-
             <?php endforeach; ?>
-
         </form>
-
         <?php
     }
 
@@ -579,15 +528,20 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         if (!Themify_Builder_Model::check_module_active($mod['mod_name'])) {
             return false;
         }
-        $output = '';
         $mod['mod_settings'] = isset($mod['mod_settings']) ? $mod['mod_settings'] : array();
 
         $mod_id = $mod['mod_name'] . '-' . $builder_id . '-' . implode('-', $identifier);
-        $output .= PHP_EOL; // add line break
+        $output = PHP_EOL; // add line break
 
-        $mod['mod_settings'] = wp_parse_args($mod['mod_settings'], self::get_module_args());
+        $mod['mod_settings'] = $mod['mod_settings']+self::get_module_args();
+        ob_start();
+        do_action('themify_builder_background_styling',$builder_id,$mod,$mod_id,'module');
+        $output .= ob_get_clean();
+        // add line break
+        $output .= PHP_EOL;
+			
         // render the module
-        $output .= self::render($mod['mod_name'], $mod_id, $builder_id, $mod['mod_settings']);
+        $output .= Themify_Builder_Model::$modules[ $mod['mod_name'] ]->render($mod['mod_name'], $mod_id, $builder_id, $mod['mod_settings'], $mod);
         // add line break
         $output .= PHP_EOL;
 
@@ -603,8 +557,8 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
      * @param string $slug 
      * @return array
      */
-    protected static function module_title_custom_style($slug) {
-        $selector = sprintf('.module.module-%s .module-title', $slug);
+    protected function module_title_custom_style() {
+        $selector = sprintf('.module.module-%s .module-title', $this->slug);
         return array(
             // Background
             self::get_seperator('module_title_background', __('Background', 'themify')),
@@ -612,6 +566,7 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
             // Font
             self::get_seperator('module_title_font', __('Font', 'themify')),
             self::get_font_family($selector, 'font_family_module_title'),
+			self::get_element_font_weight($selector, 'font_weight_module_title'),
             self::get_color($selector, 'font_color_module_title', __('Font Color', 'themify')),
             self::get_font_size($selector, 'font_size_module_title'),
             self::get_line_height($selector, 'line_height_module_title'),
@@ -629,7 +584,12 @@ class Themify_Builder_Component_Module extends Themify_Builder_Component_Base {
         $module['mod_settings'] = wp_parse_args( $module['mod_settings'], array(
             '_render_plain_content' => true
         ) );
+
+        // Remove format text filter including do_shortcode
+        if (!Themify_Builder_Model::is_front_builder_activate()) {
+            remove_filter('themify_builder_module_content', array('Themify_Builder_Model', 'format_text'));
+        }
         return self::template( $module, 0, false );
     }
-
+     
 }

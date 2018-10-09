@@ -42,10 +42,17 @@ class Themify_Builder_Components_Manager {
 		}
 	}
 
-	public static function render_components_form_content() {
-                $components = array_merge( self::get_component_types(),Themify_Builder_Model::$modules);
-		foreach ($components as $component_type ) {
-			$component_type->print_template_form();
-		}
+	public static function render_components_form_content($echo=FALSE) {
+            $return = array();
+            $components = array_merge( self::get_component_types(),Themify_Builder_Model::$modules);
+            foreach ($components as $component_type ) {
+                if(!$echo){
+                    $return[$component_type->get_name()] = preg_replace('!\s+!', ' ', $component_type->print_template_form($echo));
+                }
+                else{
+                    $component_type->print_template_form($echo);
+                }
+            }
+            return $return;
 	}
 }

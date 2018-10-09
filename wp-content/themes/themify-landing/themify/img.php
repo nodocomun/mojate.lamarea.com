@@ -20,6 +20,9 @@ if ( ! function_exists( 'themify_do_img' ) ) {
 		$attachment_id = null;
 		$img_url = null;
 
+		$width = is_numeric( $width ) ? $width : '';
+		$height = is_numeric( $height ) ? $height : '';
+
 		// if an attachment ID has been sent
 		if( is_int( $image ) ) {
 			$post = get_post( $image );
@@ -62,7 +65,7 @@ if ( ! function_exists( 'themify_do_img' ) ) {
 		if( empty( $width ) ) {
 			$width = 0;
 		}
-		if ( is_null( $height ) || 0 === $height || '0' === $height ) {
+		if ( empty( $height ) ) {
 			// If width and height or original image are available as metadata
 			if ( !empty( $meta['width'] ) && !empty( $meta['height'] ) ) {
 				// Divide width by original image aspect ratio to obtain projected height
@@ -76,10 +79,14 @@ if ( ! function_exists( 'themify_do_img' ) ) {
 		// Check if resized image already exists
 		if ( is_array( $meta ) && isset( $meta['sizes']["resized-{$width}x{$height}"] ) ) {
 			$size = $meta['sizes']["resized-{$width}x{$height}"];
-			if( isset( $size['width'] ) && isset( $size['height'] ) ) {
+			if( isset( $size['width'],$size['height'] )) {
 				setlocale( LC_CTYPE, get_locale() . '.UTF-8' );
 				$split_url = explode( '/', $img_url );
-				$split_url[ count( $split_url ) - 1 ] = $size['file'];
+				
+				if( ! isset( $size['mime-type'] ) || $size['mime-type'] !== 'image/gif' ) {
+					$split_url[ count( $split_url ) - 1 ] = $size['file'];
+				}
+
 				return array(
 					'url' => implode( '/', $split_url ),
 					'width' => $width,
@@ -131,9 +138,9 @@ if ( ! function_exists( 'themify_make_image_size' ) ) {
 		setlocale( LC_CTYPE, get_locale() . '.UTF-8' );
 		$attached_file = get_attached_file( $attachment_id );
 
-		$use_large_not_full = apply_filters( 'themify_image_script_use_large_size', true );
-		if ( $use_large_not_full && isset( $meta['sizes']['large']['file'] ) )
-			$attached_file = str_replace( $meta['file'], trailingslashit( dirname( $meta['file'] ) ) . $meta['sizes']['large']['file'], $attached_file );
+		$source_size = apply_filters( 'themify_image_script_source_size', 'large' );
+		if ( $source_size !== 'full' && isset( $meta['sizes'][ $source_size ]['file'] ) )
+			$attached_file = str_replace( $meta['file'], trailingslashit( dirname( $meta['file'] ) ) . $meta['sizes'][ $source_size ]['file'], $attached_file );
 
 		$resized = image_make_intermediate_size( $attached_file, $width, $height, true );
 		if ( $resized && ! is_wp_error( $resized ) ) {
@@ -204,23 +211,25 @@ function themify_img_resize_dimensions( $default, $orig_w, $orig_h, $dest_w, $de
 	return array( 0, 0, (int) $s_x, (int) $s_y, (int) $new_w, (int) $new_h, (int) $crop_w, (int) $crop_h );
 }
 
-/**
- * Get attachment ID for image from its url.
- *
- * @param string $url
- * @param string $base_url
- * @return bool|null|string
- */
-function themify_get_attachment_id_from_url( $url = '', $base_url = '' ) {
-	// If this is the URL of an auto-generated thumbnail, get the URL of the original image
-	$url = themify_remove_protocol_from_url( $url );
-	$url = str_replace( trailingslashit( $base_url ), '', $url );
-	$url = preg_replace( '/-\d+x\d+(?=\.(jpg|jpeg|png|gif)$)/i', '', $url );
+if( ! function_exists( 'themify_get_attachment_id_from_url' ) ) :
+	/**
+	 * Get attachment ID for image from its url.
+	 *
+	 * @param string $url
+	 * @param string $base_url
+	 * @return bool|null|string
+	 */
+	function themify_get_attachment_id_from_url( $url = '', $base_url = '' ) {
+		// If this is the URL of an auto-generated thumbnail, get the URL of the original image
+		$url = themify_remove_protocol_from_url( $url );
+		$url = str_replace( trailingslashit( $base_url ), '', $url );
+		$url = preg_replace( '/-\d+x\d+(?=\.(jpg|jpeg|png|gif)$)/i', '', $url );
 
-	// Finally, run a custom database query to get the attachment ID from the modified attachment URL
-	global $wpdb;
-	return $wpdb->get_var( $wpdb->prepare( "SELECT wposts.ID FROM $wpdb->posts wposts, $wpdb->postmeta wpostmeta WHERE wposts.ID = wpostmeta.post_id AND wpostmeta.meta_key = '_wp_attached_file' AND wpostmeta.meta_value = '%s' AND wposts.post_type = 'attachment' LIMIT 1", $url ) );
-}
+		// Finally, run a custom database query to get the attachment ID from the modified attachment URL
+		global $wpdb;
+		return $wpdb->get_var( $wpdb->prepare( "SELECT wposts.ID FROM $wpdb->posts wposts, $wpdb->postmeta wpostmeta WHERE wposts.ID = wpostmeta.post_id AND wpostmeta.meta_key = '_wp_attached_file' AND wpostmeta.meta_value = '%s' AND wposts.post_type = 'attachment' LIMIT 1", $url ) );
+	}
+endif;
 
 /**
  * Removes protocol and www from URL and returns it

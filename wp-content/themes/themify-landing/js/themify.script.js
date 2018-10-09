@@ -1,4 +1,4 @@
-;// Themify Theme Scripts - http://themify.me/
+;// Themify Theme Scripts - https://themify.me/
 
 // Initialize object literals
 var FixedHeader = {},

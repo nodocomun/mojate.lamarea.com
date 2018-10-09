@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display Telephone field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-telephone.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 $vals = $meta_data[$args['key']];
 if (!$vals || empty($vals)) {
     return;

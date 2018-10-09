@@ -3,7 +3,7 @@
 /**
  * Custom meta box class to create event-date
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -18,10 +18,12 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
         parent::__construct($type, $plugin_name, $version);
         add_filter('ptb_ajax_shortcode_result',array($this,'add_date_field'),10,2);
         add_filter('themify_ptb_shortcode_query',array($this,'date_filter'),10,1);
+		add_filter('ptb_filter_cmb_body',array($this,'before_save'),10,2);
         if(!is_admin() || (defined('DOING_AJAX') &&  DOING_AJAX)){
             add_action('ptb_search_event_date',array($this,'search_date_template'),10,8);
             add_filter('ptb_search_by_event_date',array($this,'search_date'),10,6);
             add_filter('ptb_search_filter_by_slug',array($this,'filter_value'),10,6);
+			
         }
     }
 
@@ -43,6 +45,56 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
         return $cmb_types;
     }
 
+	/**
+     * Converts the date and time to and From 'Y-m-d H:i:s'
+     *
+     * @since 1.3.5 
+     *
+     * @param string $datetime
+     * @param string $to_mysql only values 'yes' and 'no'
+	 *
+     * @return string
+     */
+	private function convert_datetime($datetime , $to_mysql = 'no'){
+		if ( empty($datetime) ) {
+			return '';
+		}
+		switch ($to_mysql) {
+			case 'no':
+				if (strpos($datetime, '@') === FALSE) {
+					$tmp_val = DateTime::createFromFormat('Y-m-d H:i:s', $datetime);
+					$datetime = $tmp_val ? $tmp_val->format('Y-m-d@h:i a') : $datetime;
+				}
+				break;
+			default :
+				if (strpos($datetime, '@') !== FALSE) {
+					$tmp_val = DateTime::createFromFormat('Y-m-d@h:i a', $datetime);
+                    $datetime = $tmp_val ? $tmp_val->format('Y-m-d H:i:s') : $datetime;
+				}
+		}
+		return $datetime;
+	}
+	
+	public function before_save($args, $post){
+		$path = plugin_dir_path(dirname(__FILE__));
+		
+		if( empty( $_POST ) ) {
+			return $args;
+		}
+		foreach ($args as $key => $data) {
+			if ($data['type'] === 'event_date' && !$data['deleted']) {
+				if ( ! empty($_POST[$key]) ) {
+					if (is_array($_POST[$key])) {
+						$_POST[$key]['start_date'] = $this->convert_datetime($_POST[$key]['start_date'], 'yes');
+						$_POST[$key]['end_date'] = $this->convert_datetime($_POST[$key]['end_date'], 'yes');
+					} else {
+						$_POST[$key] = $this->convert_datetime($_POST[$key], 'yes');
+					}
+				}
+			}
+		}
+		return $args;
+    }
     /**
      * @param string $id the id template
      * @param array $languages
@@ -181,6 +233,7 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
             if ($value && is_array($value) && isset($value['start_date'])) {
                 $value = esc_attr($value['start_date']);
             }
+			$value = isset($value) ? $this->convert_datetime($value) : '';
             ?>
             <input  id="ptb_extra_<?php echo $meta_key; ?>" 
                     type="text" 
@@ -192,21 +245,24 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
             if (!is_array($value) && $value) {
                 $tmp_val = $value;
                 $value = array();
-                $value['start_date'] = esc_attr($tmp_val);
+                $value['start_date'] = $tmp_val;
             }
+			
+			$value['start_date'] = isset($value['start_date']) ? $this->convert_datetime($value['start_date']) : '';
+			$value['end_date'] = isset($value['end_date']) ? $this->convert_datetime($value['end_date']) : '';
             ?>
             <div class="ptb_table_row">
                 <div class="ptb_table_cell">
                     <input
                         type="text" name="<?php echo sprintf('%s[start_date]', $meta_key); ?>"
                         placeholder="<?php _e('Starts on', 'ptb_extra') ?>" class="ptb_extra_input_datepicker" id="<?php echo $meta_key; ?>_start" type="text"
-                        value="<?php echo isset($value['start_date']) ? $value['start_date'] : ''; ?>"/>
+                        value="<?php echo esc_attr($value['start_date']) ?>"/>
                 </div>
                 <span class="ti-arrow-right"></span>
                 <div class="ptb_table_cell">
                     <input 
                         placeholder="<?php _e('Ends on', 'ptb_extra') ?>" class="ptb_extra_input_datepicker" id="<?php echo $meta_key; ?>_end" type="text" name="<?php echo sprintf('%s[end_date]', $meta_key); ?>"
-                        value="<?php echo isset($value['end_date']) ? $value['end_date'] : ''; ?>"/>
+                        value="<?php echo esc_attr($value['end_date']); ?>"/>
                 </div>
             </div>
         <?php endif; ?>
@@ -238,13 +294,14 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
             $options = PTB::get_option();
             $cmb = $options->get_cpt_cmb_options($args['post_type']);
             $query = array();
-            $now = date('Y-m-d@h:i a');
+            $now = current_time('Y-m-d H:i:s');
             foreach($args as  $key=>$v){
                 if (isset($cmb[$key]) && $cmb[$key]['type']==='event_date' &&  !isset($cmb[$key]['showrange']) && $v) {
                     $query[] = array(
                                     'key'=>'ptb_'.$key,
                                     'value'=>$now,
                                     'compare'=>$v==='upcoming'?'>=':'<=',
+									'type' => 'DATETIME'
                                 );
                     unset($args[$key]);
                 }
@@ -301,10 +358,10 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
 
     public function ptb_submission_form($post_type, array $args, array $module, $post, $lang, array $languages) {
         $pluginurl = plugin_dir_url(dirname(__FILE__));
-        wp_enqueue_style(self::$plugin_name . '-timepicker', $pluginurl . 'admin/css/jquery-ui-timepicker.min.css', array(), self::$version, 'all');
+        wp_enqueue_style('themify-datetimepicker', $pluginurl . 'admin/css/jquery-ui-timepicker.min.css', array(), self::$version, 'all');
         wp_enqueue_script('jquery-ui-datepicker');
-        wp_enqueue_script(self::$plugin_name . '-timepicker', $pluginurl . 'admin/js/jquery-ui-timepicker.min.js', array('jquery-ui-datepicker'), self::$version, true);
-        wp_enqueue_script(self::$plugin_name . '-submission-date',PTB_Utils::enque_min( $pluginurl . 'public/submission/js/date.js'), array('ptb-submission', self::$plugin_name . '-timepicker'), self::$version, true);
+        wp_enqueue_script('themify-datetimepicker', $pluginurl . 'admin/js/jquery-ui-timepicker.min.js', array('jquery-ui-datepicker'), self::$version, true);
+        wp_enqueue_script(self::$plugin_name . '-submission-date',PTB_Utils::enque_min( $pluginurl . 'public/submission/js/date.js'), array('ptb-submission', 'themify-datetimepicker'), self::$version, true);
         $data = isset($post->ID) ? get_post_meta($post->ID, 'ptb_' . $args['key'], TRUE) : false;
         ?>
         <div class="ptb_back_active_module_input">
@@ -368,9 +425,9 @@ class PTB_CMB_Event_Date extends PTB_Extra_Base {
                         return PTB_Utils::get_label($args['name']) . __(' has incorrect time format', 'ptb_extra');
                     }
                     if ($k) {
-                        $post_data[$module['key']][$k] = $time ? $start_date : $date[0];
+                        $post_data[$module['key']][$k] = $time ? $this->convert_datetime($start_date, 'yes') : $date[0];
                     } else {
-                        $post_data[$module['key']] = $time ? $start_date : $date[0];
+                        $post_data[$module['key']] = $time ? $this->convert_datetime($start_date, 'yes') : $date[0];
                     }
                 } else {
                     $error = true;

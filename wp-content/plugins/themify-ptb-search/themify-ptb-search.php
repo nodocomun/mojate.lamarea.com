@@ -1,15 +1,15 @@
 <?php
 /**
  * Plugin Name:       PTB Search
- * Plugin URI:        http://themify.me
- * Description:       Addon to use with Post Type Builder plugin that allows users to create search forms for ptb custom post types
- * Version:           1.2.0
+ * Plugin URI:        https://themify.me/ptb-addons/search
+ * Description:       Addon to use with Post Type Builder plugin that allows users to create search forms for PTB custom post types.
+ * Version:           1.2.2
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb-search
  * Domain Path:       /languages
  *
- * @link              http://themify.me
+ * @link              https://themify.me
  * @since             1.0.0
  * @package           PTB
  */

@@ -6,7 +6,7 @@
  *	----------------------------------------------------------------------
  *
  *  					Copyright (C) Themify
- * 						http://themify.me
+ * 						https://themify.me
  *
  ***************************************************************************/
 
@@ -72,6 +72,10 @@ $themify_theme_config['panel']['settings']['tab']['default_layouts'] = array(
 		array(
 			'title' => __('Default Page Layout', 'themify'),
 			'function' => 'default_page_layout'
+		),
+		array(
+			'title' => __('Custom Post Types', 'themify'),
+			'function' => 'custom_post_type_layouts'
 		)
 	)
 );

@@ -167,7 +167,7 @@ var PTB;
 
 $(document).ready(function () {
         var $body = $('body'),
-            single = $('.ptb_single_content');
+            single = $('.ptb_single_content').not('.post-password-required');
         function ptb_lightbox_position() {
             $('#lightcase-case').find('.ptb_single_lightbox').css('max-height', $(window).height() - 100);
         }
@@ -180,8 +180,7 @@ $(document).ready(function () {
           $body.removeClass('ptb_hide_scroll');
           $(window).unbind('resize', ptb_lightbox_position);
         });
-        PTB_Lightbox();
-        
+           
         //Single Page Lightbox
        
         function PTB_Lightbox(){
@@ -205,6 +204,8 @@ $(document).ready(function () {
                                     triggerEvent(window, 'resize');
                                     ptb_lightbox_position();
                                     $(window).resize(ptb_lightbox_position);
+                                    PTB_Masonry($container);
+                                    PTB_Filter($container);
                                 }
                             },
                             onClose: {
@@ -238,46 +239,85 @@ $(document).ready(function () {
         }
 
         //Isotop Filter
+        function PTB_Filter(context){
+            var $filter = $('.ptb-post-filter',context);
+            $filter.each(function () {
+                var $entity = $(this).next('.ptb_loops_wrapper');
+                $(this).on('click', 'li', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var $posts = $entity.find('.ptb_post'),
+                        masonry = $entity.hasClass('ptb_masonry');
+                    $posts.removeClass('ptb-isotop-filter-clear');
 
-        var $filter = $('.ptb-post-filter');
-        $filter.each(function () {
-            var $entity = $(this).next('.ptb_loops_wrapper');
-            $(this).on('click', 'li', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                var $posts = $entity.find('.ptb_post');
-                $posts.removeClass('ptb-isotop-filter-clear');
-
-                if ($(this).hasClass('ptb_filter_active')) {
-                    $filter.find('li.ptb_filter_active').removeClass('ptb_filter_active');
-                    $entity.removeClass('ptb-isotop-filter');
-                    $posts.stop().fadeIn('normal');
-                }
-                else {
-                    $filter.find('li.ptb_filter_active').removeClass('ptb_filter_active');
-                    $(this).addClass('ptb_filter_active');
-                    $entity.addClass('ptb-isotop-filter');
-                    var $tax = '.ptb-tax-' + $(this).data('tax'),
-                            $child = $(this).find('li');
-                    if ($child.length > 0) {
-                        $child.each(function () {
-                            $tax += ' ,.ptb-tax-' + $(this).data('tax');
-                        });
-                    }
-                    var $items = $posts.filter($tax),
-                        $grid = $entity.hasClass('ptb_grid4') ? 4 : ($entity.hasClass('ptb_grid3') ? 3 : ($entity.hasClass('ptb_grid2') ? 2 : 1));
-                    if ($grid > 1) {
-                        $items.each(function ($i) {
-                            if ($i % $grid === 0) {
-                                $(this).addClass('ptb-isotop-filter-clear');
+                    if ($(this).hasClass('ptb_filter_active')) {
+                        $filter.find('li.ptb_filter_active').removeClass('ptb_filter_active');
+                        $entity.removeClass('ptb-isotop-filter');
+                        $posts.stop().fadeIn('normal',function(){
+                            if(masonry){
+                                $entity.masonry('layout');
                             }
                         });
                     }
-                    $posts.hide();
-                    $items.not('visible').stop().fadeIn('normal');
-                }
+                    else {
+                        $filter.find('li.ptb_filter_active').removeClass('ptb_filter_active');
+                        $(this).addClass('ptb_filter_active');
+                        $entity.addClass('ptb-isotop-filter');
+                        var $tax = '.ptb-tax-' + $(this).data('tax'),
+                                $child = $(this).find('li');
+                        if ($child.length > 0) {
+                            $child.each(function () {
+                                $tax += ' ,.ptb-tax-' + $(this).data('tax');
+                            });
+                        }
+                        var $items = $posts.filter($tax),
+                            $grid = $entity.hasClass('ptb_grid4') ? 4 : ($entity.hasClass('ptb_grid3') ? 3 : ($entity.hasClass('ptb_grid2') ? 2 : 1));
+                        if ($grid > 1) {
+                            $items.each(function ($i) {
+                                if ($i % $grid === 0) {
+                                    $(this).addClass('ptb-isotop-filter-clear');
+                                }
+                            });
+                        }
+                        $posts.hide();
+                        $items.not('visible').stop().fadeIn('normal',function(){
+                            if(masonry){
+                                $entity.masonry('layout');
+                            }
+                        });
+                    }
+                });
             });
-        });
-
+        }
+       
+        
+        function PTB_Masonry(context){
+            var items = $('.ptb_masonry',context);
+            if(items.length>0){
+                PTB.LoadAsync(ptb.include + 'imagesloaded.min.js', function() { 
+                    PTB.LoadAsync(ptb.include + 'masonry.min.js', function() { 
+                    items.each(function(){
+                        this.insertAdjacentHTML('afterbegin','</div><div class="ptb_gutter_sizer"></div><div class="ptb_post_sizer"></div>');
+                        var that = $(this);
+                        $(this).imagesLoaded().always(function(el){
+							$(el.elements[0]).masonry({
+								columnWidth : '.ptb_post_sizer' ,
+                                itemSelector:'.ptb_post',
+                                isOriginLeft : ! $( 'body' ).hasClass( 'rtl' ),
+                                gutter: '.ptb_gutter_sizer' 
+                            });
+                        });
+                    });
+                    },null,function(){
+                        return typeof $.fn.masonry!=='undefined';
+                    });
+                },null,function(){
+                        return typeof $.fn.imagesLoaded!=='undefined';
+                });
+            }
+        }
+        PTB_Lightbox();
+        PTB_Masonry();
+        PTB_Filter();
     });
 }(jQuery));

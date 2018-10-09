@@ -1,5 +1,14 @@
+<?php
+/**
+ * Template to display Video field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-video.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
 
-<?php if (!empty($meta_data[$args['key']])): ?>
+if (!empty($meta_data[$args['key']])): ?>
     <?php
     $class = array();
     $class[] = 'ptb_extra_columns_' . $data['columns'];

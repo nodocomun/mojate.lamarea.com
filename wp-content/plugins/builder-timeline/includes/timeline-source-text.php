@@ -118,7 +118,7 @@ class Builder_Timeline_Text_Source {
 						)
 					)
 				),
-				'wrap_with_class' => 'tb-group-element tb-group-element-text'
+				'wrap_with_class' => 'tb_group_element tb_group_element_text'
 			)
 		);
 	}

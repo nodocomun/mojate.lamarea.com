@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name:  Builder Timeline
-Plugin URI:   http://themify.me/addons/timeline
-Version:      1.1.5
+Plugin URI:   https://themify.me/addons/timeline
+Version:      1.1.6
 Author:       Themify
 Description:  Display content in a timeline-styled layouts. It requires to use with the latest version of any Themify theme or the Themify Builder plugin.
 Text Domain:  builder-timeline

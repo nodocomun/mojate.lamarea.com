@@ -3,7 +3,7 @@
 /**
  * Custom meta box class to create gallery
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -146,7 +146,7 @@ class PTB_CMB_Video extends PTB_Extra_Base {
                         </div>
                         <input type="text" name="<?php echo $url_name; ?>" value="<?php echo esc_url_raw($v); ?>" placeholder="<?php _e('Video Url(youtube/vimeo)', 'ptb_extra') ?>"/>
                         <input type="text" name="<?php echo $title_name; ?>" value="<?php esc_attr_e($title) ?>" placeholder="<?php _e('Title', 'ptb_extra') ?>" class="ptb_extra_row_margin"/>
-                        <textarea name="<?php echo $description_name ?>" placeholder="<?php _e('Description', 'ptb_extra') ?>"><?php echo esc_textarea($description) ?></textarea>
+                        <textarea name="<?php echo $description_name ?>" placeholder="<?php _e('Description', 'ptb_extra') ?>"><?php echo $description; ?></textarea>
                         <span class="<?php echo $meta_key; ?>_remove remove ti-close"></span>
                     </li>
                 <?php endforeach; ?>

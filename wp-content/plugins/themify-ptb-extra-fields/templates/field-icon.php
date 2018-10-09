@@ -1,4 +1,13 @@
 <?php 
+/**
+ * Template to display Icon field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-icon.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 $icons = $meta_data[$args['key']];
  if (isset($icons['icon'])): ?>
     <?php

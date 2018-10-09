@@ -45,6 +45,7 @@ final class Themify_Builder_Model {
     public static $lightbox_link = array();
     public static $modules = array();
     public static $layouts_version_name = 'tbuilder_layouts_version';
+    private static $transient_name = 'tb_edit_';
 
     /**
      * Active custom post types registered by Builder.
@@ -63,25 +64,21 @@ final class Themify_Builder_Model {
     }
 
     public static function register_module($module_class) {
-        if (class_exists($module_class)) {
-            $instance = new $module_class();
-            self::$modules[$instance->slug] = self::add_favorite_option( $instance );
-        }
+        $instance = new $module_class();
+        self::$modules[$instance->slug] = self::is_front_builder_activate() || is_admin()?self::add_favorite_option( $instance ):$instance;
     }
 
 	/**
 	 * Add favorite option to module instance
 	 * @return object
 	 */
-	private static function add_favorite_option( $instance ) {
+	private static function add_favorite_option(Themify_Builder_Component_Module $instance ) {
                 static $favorite_data = NULL;
-		if( is_object( $instance ) ) {
-                    if($favorite_data===NULL){
-                        $favorite_data = get_user_option( 'themify_module_favorite', get_current_user_id() );
-                        $favorite_data = ! empty( $favorite_data )?(array) json_decode( $favorite_data ):array();
-                    }
-                    $instance->favorite = ! empty( $favorite_data[ $instance->slug ] );
-		}
+                if($favorite_data===NULL){
+                    $favorite_data = get_user_option( 'themify_module_favorite', get_current_user_id() );
+                    $favorite_data = ! empty( $favorite_data )?(array) json_decode( $favorite_data ):array();
+                }
+                $instance->favorite = ! empty( $favorite_data[ $instance->slug ] );
 		return $instance;
 	}
 
@@ -418,77 +415,90 @@ final class Themify_Builder_Model {
     }
 
     /**
+     * Check whether builder sticky scroll is active
+     * @return boolean
+     */
+    public static function is_sticky_scroll_active() {
+        static $is_sticky_scroll = NULL;
+        if ($is_sticky_scroll === null) {
+            // check if mobile exclude disabled OR disabled all transition
+            $val = themify_builder_get('setting-page_builder_animation_sticky_scroll', 'builder_animation_sticky_scroll');
+            $disable_all = $val === 'all';
+            $disable_mobile = $disable_all || $val === 'mobile';
+            $is_sticky_scroll = self::is_premium() && !(( $disable_mobile && themify_is_touch() ) || $disable_all);
+        }
+        return $is_sticky_scroll;
+    }
+
+    /**
      * Get Grid Settings
      * @return array
      */
     public static function get_grid_settings($setting = 'grid') {
-        static $return = array();
-        if (empty($return[$setting])) {
-            $gutters = array(
-                array('name' => __('Default', 'themify'), 'value' => 'gutter-default'),
-                array('name' => __('Narrow', 'themify'), 'value' => 'gutter-narrow'),
-                array('name' => __('None', 'themify'), 'value' => 'gutter-none'),
-            );
+        
+        $gutters = array(
+            array('name' => __('Default', 'themify'), 'value' => 'gutter-default'),
+            array('name' => __('Narrow', 'themify'), 'value' => 'gutter-narrow'),
+            array('name' => __('None', 'themify'), 'value' => 'gutter-none'),
+        );
 
-            $columnAlignment = array(
-                array('img' => 'alignment-top', 'alignment' => 'col_align_top'),
-                array('img' => 'alignment-middle', 'alignment' => 'col_align_middle'),
-                array('img' => 'alignment-bottom', 'alignment' => 'col_align_bottom')
-            );
-            switch ($setting) {
-                case 'grid':
-                    $value = array(
-                        // Grid FullWidth
-                        array('img' => '1-col', 'data' => array('-full')),
-                        // Grid 2
-                        array('img' => '2-col', 'data' => array('4-2', '4-2')),
-                        // Grid 3
-                        array('img' => '3-col', 'data' => array('3-1', '3-1', '3-1')),
-                        // Grid 4
-                        array('img' => '4-col', 'data' => array('4-1', '4-1', '4-1', '4-1')),
-                        // Grid 5
-                        array('img' => '5-col', 'data' => array('5-1', '5-1', '5-1', '5-1', '5-1')),
-                        // Grid 6
-                        array('img' => '6-col', 'data' => array('6-1', '6-1', '6-1', '6-1', '6-1', '6-1')),
-                        array('img' => '1-4-3-4', 'data' => array('4-1', '4-3')),
-                        array('img' => '1-4-1-4-2-4', 'data' => array('4-1', '4-1', '4-2')),
-                        array('img' => '1-4-2-4-1-4', 'data' => array('4-1', '4-2', '4-1'),'exclude'=>true),
-                        array('img' => '2-4-1-4-1-4', 'data' => array('4-2', '4-1', '4-1')),
-                        array('img' => '3-4-1-4', 'data' => array('4-3', '4-1')),
-                        array('img' => '2-3-1-3', 'data' => array('3-2', '3-1')),
-                        array('img' => '1-3-2-3', 'data' => array('3-1', '3-2'))
-                    );
-                    break;
-                case 'column_dir':
-                    $value = array(
-                        array('img' => 'column-ltr', 'dir' => 'ltr'),
-                        array('img' => 'column-rtl', 'dir' => 'rtl')
-                    );
-                    break;
-                case 'column_alignment':
-                    $value = $columnAlignment;
-                    break;
-                case 'column_alignment_class':
-                    $columnAlignmentClass = array();
-                    foreach ($columnAlignment as $ca) {
-                        $columnAlignmentClass[] = $ca['alignment'];
-                    }
-                    $value = implode(' ', $columnAlignmentClass);
-                    break;
-                case 'gutter_class':
-                    $guiterClass = array();
-                    foreach ($gutters as $g) {
-                        $guiterClass[] = $g['value'];
-                    }
-                    $value = implode(' ', $guiterClass);
-                    break;
-                default :
-                    $value = $gutters;
-                    break;
-            }
-            $return[$setting] = $value;
+        $columnAlignment = array(
+            array('img' => 'alignment_top', 'alignment' => 'col_align_top'),
+            array('img' => 'alignment_middle', 'alignment' => 'col_align_middle'),
+            array('img' => 'alignment_bottom', 'alignment' => 'col_align_bottom')
+        );
+        switch ($setting) {
+            case 'grid':
+                $value = array(
+                    // Grid FullWidth
+                    array('img' => '1_col', 'data' => array('-full')),
+                    // Grid 2
+                    array('img' => '2_col', 'data' => array('4-2', '4-2')),
+                    // Grid 3
+                    array('img' => '3_col', 'data' => array('3-1', '3-1', '3-1')),
+                    // Grid 4
+                    array('img' => '4_col', 'data' => array('4-1', '4-1', '4-1', '4-1')),
+                    // Grid 5
+                    array('img' => '5_col', 'data' => array('5-1', '5-1', '5-1', '5-1', '5-1')),
+                    // Grid 6
+                    array('img' => '6_col', 'data' => array('6-1', '6-1', '6-1', '6-1', '6-1', '6-1')),
+                    array('img' => '1_4_3_4', 'data' => array('4-1', '4-3')),
+                    array('img' => '1_4_1_4_2_4', 'data' => array('4-1', '4-1', '4-2')),
+                    array('img' => '1_4_2_4_1_4', 'data' => array('4-1', '4-2', '4-1'),'exclude'=>true),
+                    array('img' => '2_4_1_4_1_4', 'data' => array('4-2', '4-1', '4-1')),
+                    array('img' => '3_4_1_4', 'data' => array('4-3', '4-1')),
+                    array('img' => '2_3_1_3', 'data' => array('3-2', '3-1')),
+                    array('img' => '1_3_2_3', 'data' => array('3-1', '3-2'))
+                );
+                break;
+            case 'column_dir':
+                $value = array(
+                    array('img' => 'column_ltr', 'dir' => 'ltr'),
+                    array('img' => 'column_rtl', 'dir' => 'rtl')
+                );
+                break;
+            case 'column_alignment':
+                $value = $columnAlignment;
+                break;
+            case 'column_alignment_class':
+                $columnAlignmentClass = array();
+                foreach ($columnAlignment as $ca) {
+                    $columnAlignmentClass[] = $ca['alignment'];
+                }
+                $value = implode(' ', $columnAlignmentClass);
+                break;
+            case 'gutter_class':
+                $guiterClass = array();
+                foreach ($gutters as $g) {
+                    $guiterClass[] = $g['value'];
+                }
+                $value = implode(' ', $guiterClass);
+                break;
+            default :
+                $value = $gutters;
+                break;
         }
-        return $return[$setting];
+        return $value;
     }
 
     /**
@@ -611,6 +621,29 @@ final class Themify_Builder_Model {
         return $repeat;
     }
 
+	/**
+	 * Returns list of background position values
+	 *
+	 * @return array
+	 */
+	public static function get_position() {
+		static $position = null;
+		if ($position === null) {
+			$position = array(
+				array('value' => 'left-top', 'name' => __( 'Left Top', 'themify')),
+				array('value' => 'left-center', 'name' => __( 'Left Center', 'themify' )),
+				array('value' => 'left-bottom', 'name' => __( 'Left Bottom', 'themify' )),
+				array('value' => 'right-top', 'name' => __( 'Right top', 'themify')),
+				array('value' => 'right-center', 'name' => __( 'Right Center', 'themify' )),
+				array('value' => 'right-bottom', 'name' => __( 'Right Bottom', 'themify' )),
+				array('value' => 'center-top', 'name' => __( 'Center Top', 'themify' )),
+				array('value' => 'center-center', 'name' => __( 'Center Center', 'themify' )),
+				array('value' => 'center-bottom', 'name' => __( 'Center Bottom', 'themify' ))
+			);
+		}
+		return $position;
+	}
+
     /**
      * Returns list of text_decoration
      *
@@ -620,9 +653,9 @@ final class Themify_Builder_Model {
         static $decoration = null;
         if ($decoration === null) {
             $decoration = array(
-                array('value' => 'underline', 'name' => __('Underline', 'themify'), 'icon' => '<span style="text-decoration:underline;">U</span>'),
-                array('value' => 'overline', 'name' => __('Overline', 'themify'), 'icon' => '<span style="text-decoration:overline;">O</span>'),
-                array('value' => 'line-through', 'name' => __('Line through', 'themify'), 'icon' => '<span style="text-decoration:line-through;">S</span>'),
+                array('value' => 'underline', 'name' => __('Underline', 'themify'), 'icon' => '<span class="tb_text_underline">U</span>'),
+                array('value' => 'overline', 'name' => __('Overline', 'themify'), 'icon' => '<span class="tb_text_overline">O</span>'),
+                array('value' => 'line-through', 'name' => __('Line through', 'themify'), 'icon' => '<span class="tb_text_through">S</span>'),
                 array('value' => 'none', 'name' => __('None', 'themify'), 'icon' => '–')
             );
         }
@@ -639,7 +672,7 @@ final class Themify_Builder_Model {
 
         if ($font_style === null) {
             $font_style = array(
-                array('value' => 'italic', 'name' => __('Italic', 'themify'), 'icon' => '<span style="font-style:italic;">I</span>'),
+                array('value' => 'italic', 'name' => __('Italic', 'themify'), 'icon' => '<span class="tb_font_italic">I</span>'),
                 array('value' => 'normal', 'name' => __('Normal', 'themify'), 'icon' => 'N')
             );
         }
@@ -656,7 +689,7 @@ final class Themify_Builder_Model {
 		static $font_weight = NULL;
 		if ($font_weight === null) {
 			$font_weight = array(
-				array('value' => 'bold', 'name' => __('Bold', 'themify'), 'icon' => '<span style="font-weight:bold;">B</span>'),
+				array('value' => 'bold', 'name' => __('Bold', 'themify'), 'icon' => '<span class="tb_font_bold">B</span>'),
 			);
 		}
 		return $font_weight;
@@ -803,13 +836,19 @@ final class Themify_Builder_Model {
         return $is_premium;
     }
 
-    public static function hasAccess() {
-        static $has_access = null;
-        if ($has_access === null) {
-            $has_access = self::is_themify_theme() ? Themify_Access_Role::check_access_backend() : (self::is_premium() && class_exists('Themify_Builder_Access_Role') ? Themify_Builder_Access_Role::check_access_backend() : current_user_can('manage_options'));
-        }
-        return $has_access;
-    }
+	public static function hasAccess() {
+		static $has_access = null;
+
+		if ( $has_access === null ) {
+			$has_access = self::is_themify_theme() 
+				? Themify_Access_Role::check_access_backend() 
+				: (self::is_premium() && class_exists('Themify_Access_Role') 
+					? Themify_Access_Role::check_access_backend() 
+					: current_user_can( 'manage_options' ) );
+		}
+
+		return $has_access;
+	}
 
     public static function get_addons_assets() {
         return apply_filters('themify_builder_addons_assets', array());
@@ -825,13 +864,13 @@ final class Themify_Builder_Model {
     }
 
     public static function format_text($content) {
-		global $wp_embed;
+        global $wp_embed;
 
-		/**
-		 * @note: htmlspecialchars_decode must run *before* do_shortcode,
-		 * otherwise it can break shortcodes that output JSON data.
-		 * Ticket #5065
-		 */
+        /**
+         * @note: htmlspecialchars_decode must run *before* do_shortcode,
+         * otherwise it can break shortcodes that output JSON data.
+         * Ticket #5065
+         */
         $content = htmlspecialchars_decode($content);
         $content = wptexturize($content);
 
@@ -843,9 +882,7 @@ final class Themify_Builder_Model {
         $content = preg_replace($pattern, $to, $content);
         $content = $wp_embed->autoembed($content);
 
-        $content = convert_smilies($content);
-
-        return $content;
+        return convert_smilies($content);
     }
 
     /**
@@ -944,13 +981,14 @@ final class Themify_Builder_Model {
      * Register default directories used to load modules and their templates
      */
     public static function setup_default_directories() {
+        $theme_dir = get_template_directory();
         self::register_directory('templates', THEMIFY_BUILDER_TEMPLATES_DIR, 1);
-        self::register_directory('templates', get_template_directory() . '/themify-builder/', 5);
+        self::register_directory('templates', $theme_dir . '/themify-builder/', 15);
         if (is_child_theme()) {
-            self::register_directory('templates', get_stylesheet_directory() . '/themify-builder/', 9);
+            self::register_directory('templates', get_stylesheet_directory() . '/themify-builder/', 20);
         }
         self::register_directory('modules', THEMIFY_BUILDER_MODULES_DIR, 1);
-        self::register_directory('modules', get_template_directory() . '/themify-builder-modules/', 5);
+        self::register_directory('modules', $theme_dir . '/themify-builder-modules/', 15);
     }
 
     public static function register_directory($context, $path, $priority = 10) {
@@ -958,7 +996,13 @@ final class Themify_Builder_Model {
     }
 
     public static function get_directory_path($context) {
-        return call_user_func_array('array_merge', self::$directory_registry[$context]);
+        static $dir = array();
+        if(!isset($dir[$context])){
+            krsort( self::$directory_registry[$context] ); 
+            $dir[$context] = call_user_func_array('array_merge', self::$directory_registry[$context]);
+            unset(self::$directory_registry[$context] );
+        }
+        return $dir[$context];
     }
 
     public static function remove_cache($post_id, $tag = false, array $args = array()) {
@@ -972,23 +1016,26 @@ final class Themify_Builder_Model {
         return apply_filters("builder_is_{$post_type}_active", $active);
     }
 
-    public static function builder_cpt_check() {
-        $post_types = get_option('builder_cpt', null);
-        if (is_null($post_types)) {
-            global $wpdb;
-            foreach (array('slider', 'highlight', 'testimonial', 'portfolio') as $post_type) {
-                if(post_type_exists($post_type)){
-                    $posts = $wpdb->get_var($wpdb->prepare("SELECT 1 FROM {$wpdb->posts} WHERE post_type = '%s' LIMIT 1", $post_type));
-                    if (!empty($posts)) {
-                        self::$builder_cpt[] = $post_type;
-                    }
-                }
-            }
-            update_option('builder_cpt', self::$builder_cpt);
-        } else {
-            self::$builder_cpt = $post_types;
-        }
-    }
+	public static function builder_cpt_check() {
+		static $post_types = null;
+		
+		if ( is_null( $post_types ) ) {
+			global $wpdb;
+
+			foreach (array('slider', 'highlight', 'testimonial', 'portfolio') as $post_type) {
+				if( post_type_exists( $post_type ) ) {
+					self::$builder_cpt[] = $post_type;
+				} else {
+					$posts = $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM $wpdb->posts WHERE post_type='%s' LIMIT 1", $post_type ) );
+					! empty( $posts ) && ( self::$builder_cpt[] = $post_type );
+				}
+			}
+
+			$post_types = self::$builder_cpt;
+		} else {
+			self::$builder_cpt = $post_types;
+		}
+	}
 
     /**
      * Get a list of post types that can be accessed publicly
@@ -1092,8 +1139,7 @@ final class Themify_Builder_Model {
         $return = array();
         if (!empty($slug_arr)) {
             foreach ($slug_arr as $slug) {
-                $return[] = self::get_id_by_slug(trim($slug));
-                $return[] = $post_type;
+                $return[] = self::get_id_by_slug(trim( $slug), $post_type );
             }
         }
         return $return;
@@ -1112,11 +1158,7 @@ final class Themify_Builder_Model {
     }
 
     public static function getMapKey() {
-        static $key = null;
-        if ($key === null) {
-            $key = themify_builder_get('setting-google_map_key', 'builder_settings_google_map_key');
-        }
-        return $key;
+        return themify_builder_get('setting-google_map_key', 'builder_settings_google_map_key');
     }
 
     /**
@@ -1127,9 +1169,9 @@ final class Themify_Builder_Model {
     public static function get_builder_plupload_init() {
         return apply_filters('themify_builder_plupload_init_vars', array(
             'runtimes' => 'html5,flash,silverlight,html4',
-            'browse_button' => 'themify-builder-plupload-browse-button', // adjusted by uploader
-            'container' => 'themify-builder-plupload-upload-ui', // adjusted by uploader
-            'drop_element' => 'drag-drop-area', // adjusted by uploader
+            'browse_button' => 'tb_plupload_browse_button', // adjusted by uploader
+            'container' => 'tb_plupload_upload_ui', // adjusted by uploader
+            'drop_element' => 'tb_plupload_upload_ui',  // adjusted by uploader
             'file_data_name' => 'async-upload', // adjusted by uploader
             'multiple_queues' => true,
             'max_file_size' => wp_max_upload_size() . 'b',
@@ -1170,25 +1212,60 @@ final class Themify_Builder_Model {
         return $themify_builder_data;
     }
     
+    public static function get_animation(){
+        static $animation = null;
+        if ($animation === null) {
+            $animation = array(
+                array(
+                    'type' => 'separator',
+                    'meta' => array('html' => '<h4>' . esc_html__('Appearance Animation', 'themify') . '</h4>')
+                ),
+                array(
+                    'id' => 'multi_Animation Effect',
+                    'type' => 'multi',
+                    'label' => __('Effect', 'themify'),
+                    'fields' => array(
+                        array(
+                            'id' => 'animation_effect',
+                            'type' => 'animation_select'
+                        ),
+                        array(
+                            'id' => 'animation_effect_delay',
+                            'type' => 'text',
+                            'class' => 'xsmall',
+                            'description' => __('Delay', 'themify')
+                        ),
+                        array(
+                            'id' => 'animation_effect_repeat',
+                            'type' => 'text',
+                            'class' => 'xsmall',
+                            'description' => __('Repeat', 'themify')
+                        )
+                    ),
+                    'is_premium'=>self::is_premium()
+                ),
+               
+            );
+        }
+        return $animation;
+    }
+
+
     /**
      * Get ID
      */
     public static function get_ID() {
-        static $shop_id = null;
-		if($shop_id===null){
-			if(themify_is_woocommerce_active() && is_shop()){
-				$shop_page   = get_post( wc_get_page_id( 'shop' ) );
-				if ( $shop_page ) {
-					$shop_id = $shop_page->ID;
-					return $shop_id;
-				}
-			}
-		}
-		else{
-			return $shop_id;
-		}
-		return get_the_ID();
+		if ( themify_is_woocommerce_active() && is_shop() ) {
+			$page_id = version_compare( WOOCOMMERCE_VERSION, '3.0.0', '>=' )
+				? wc_get_page_id( 'shop' )
+				: woocommerce_get_page_id( 'shop' );
+		  } else {
+			$page_id = get_the_id();
+		  }
+		
+		return $page_id;
     }
+
     /**
      * Get Grid menu list
      */
@@ -1199,43 +1276,43 @@ final class Themify_Builder_Model {
         $column_direction = self::get_grid_settings('column_dir');
         $breakpoints = themify_get_breakpoints();
         $breakpoints = array_merge(array('desktop' => ''), $breakpoints);
+        $is_premium = Themify_Builder_Model::is_premium();
         ?>
-        <div class="grid_menu" data-handle="<?php echo $handle; ?>">
-            <div class="grid_icon ti-layout-column3"><span class="row-anchor-name"></span></div>
-            <div class="themify_builder_grid_list_wrapper">
+        <div class="tb_grid_menu" data-handle="<?php echo $handle; ?>">
                 <ul class="grid_tabs">
                     <?php foreach ($breakpoints as $b => $v): ?>
-                        <li>
-                            <a data-handle="<?php echo $handle; ?>" title="<?php echo $b==='tablet_landscape' ? __( 'Tablet Landscape', 'themify' ) : ucfirst($b);?>" href="#<?php echo $b ?>" class="tab-<?php echo $b ?>">
+                        <li<?php if(!$is_premium && $b!=='desktop'):?> class="tb_lite"<?php endif;?>>
+                            <?php if(!$is_premium && $b!=='desktop'):?><span class="themify_lite_tooltip"></span><?php endif;?>
+                            <a data-handle="<?php echo $handle; ?>" title="<?php echo $b==='tablet_landscape' ? __( 'Tablet Landscape', 'themify' ) : ucfirst($b);?>" href="#<?php echo $b ?>" class="tab_<?php echo $b ?>">
                                 <i class="<?php if($b==='tablet_landscape'):?>ti-tablet <?php endif;?>ti-<?php echo $b ?>"></i>
                             </a>
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <div class="themify_builder_grid_tab themify_builder_grid_desktop">
-                    <ul class="themify_builder_grid_list clearfix">
+                <div class="tb_grid_tab tb_grid_desktop">
+                    <ul class="tb_grid_list clearfix">
                         <?php foreach ($grid_lists as &$li): ?>
                         <?php  $li['col'] = count($li['data']);?>
-                            <li><a href="#" class="themify_builder_column_select grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="desktop" data-handle="<?php echo $handle; ?>" data-col="<?php echo $li['col']; ?>" data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb-grids tb-<?php echo $li['img'] ?>"></span></a></li>
+                            <li><a href="#" class="tb_column_select grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="desktop" data-handle="<?php echo $handle; ?>" data-col="<?php echo $li['col']; ?>" data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb_grids tb_<?php echo $li['img'] ?>"></span></a></li>
                         <?php endforeach; ?>
                     </ul>
 
-                    <ul class="themify_builder_column_alignment clearfix tb-actions">
+                    <ul class="tb_column_alignment clearfix tb_actions">
                         <?php foreach ($column_alignment as $aligm): ?>
-                            <li <?php if ($aligm['alignment'] === 'col_align_top') echo ' class="selected"' ?>><a href="#" class="themify_builder_column_select column-alignment-<?php echo $aligm['alignment']; ?>" data-handle="<?php echo $handle; ?>" data-alignment="<?php echo $aligm['alignment'] ?>"><span class="tb-<?php echo $aligm['img'] ?>"></span></a></li>
+                            <li <?php if ($aligm['alignment'] === 'col_align_top') echo ' class="selected"' ?>><a href="#" class="tb_column_select column-alignment-<?php echo $aligm['alignment']; ?>" data-handle="<?php echo $handle; ?>" data-alignment="<?php echo $aligm['alignment'] ?>"><span class="tb_<?php echo $aligm['img'] ?>"></span></a></li>
                         <?php endforeach; ?>
 
                         <li><?php _e('Column Alignment', 'themify') ?></li>
                     </ul>
-                    <ul class="themify_builder_column_direction clearfix tb-actions">
+                    <ul class="tb_column_direction clearfix tb_actions">
                         <?php foreach ($column_direction as $dir): ?>
                             <li<?php if ($dir['dir'] === 'ltr') echo ' class="selected"' ?>>
-                                <a href="#" class="themify_builder_dir_select column-dir-<?php echo $dir['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $dir['dir']; ?>"><span class="tb-<?php echo $dir['img'] ?>"></span></a>
+                                <a href="#" class="tb_dir_select column-dir-<?php echo $dir['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $dir['dir']; ?>"><span class="tb_<?php echo $dir['img'] ?>"></span></a>
                             </li>    					
                         <?php endforeach; ?>
                         <li><?php _e('Column Direction', 'themify') ?></li>
                     </ul>
-                    <div class="themify_builder_column_gutter clearfix">
+                    <div class="tb_column_gutter clearfix">
                         <select class="gutter_select" data-handle="<?php echo $handle; ?>">
                             <?php foreach ($gutters as $gutter): ?>
                                 <option value="<?php echo esc_attr($gutter['value']); ?>"><?php echo esc_html($gutter['name']); ?></option>
@@ -1244,48 +1321,135 @@ final class Themify_Builder_Model {
                         <span><?php _e('Gutter Spacing', 'themify') ?></span>
                     </div>
                 </div>
-                <div class="themify_builder_grid_tab themify_builder_grid_reposnive themify_builder_grid_tablet">
-                    <ul class="themify_builder_grid_list clearfix">
-                        <li class="selected"><a href="#" class="themify_builder_column_select tb1 tablet-auto" data-type="tablet" data-handle="<?php echo $handle; ?>" data-grid='["-auto"]'><span class="tb-grids tb-auto"></span></a></li>
+                <div class="tb_grid_tab tb_grid_reposnive tb_grid_tablet_landscape">
+                    <ul class="tb_grid_list clearfix">
+                        <li class="selected"><a href="#" class="tb_column_select tb1 tablet_landscape-auto" data-type="tablet_landscape" data-handle="<?php echo $handle; ?>" data-grid='["-auto"]'><span class="tb_grids tb_auto"></span></a></li>
                         <?php foreach ($grid_lists as $k => &$li): ?>
                             <?php 
                             if(!isset($li['exclude'])){
                                 $li['data'] = array_values(array_unique($li['data']));
                             }
                             ?>
-                            <li><a href="#" class="themify_builder_column_select tb<?php echo $li['col']; ?> grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="tablet" data-handle="<?php echo $handle; ?>"   data-col="<?php echo $li['col']; ?>"  data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb-grids tb-<?php echo $li['img'] ?>"></span></a></li>
+                            <li><a href="#" class="tb_column_select tb<?php echo $li['col']; ?> grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="tablet_landscape" data-handle="<?php echo $handle; ?>" data-col="<?php echo $li['col']; ?>" data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb_grids tb_<?php echo $li['img'] ?>"></span></a></li>
                         <?php endforeach; ?>
                     </ul>
-                    <ul class="themify_builder_column_direction clearfix tb-actions">
+                    <ul class="tb_column_direction clearfix tb_actions">
                         <?php foreach ($column_direction as $aligm): ?>
                             <li<?php if ($aligm['dir'] === 'ltr') echo ' class="selected"' ?>>
-                                <a href="#" class="themify_builder_dir_select column-dir-<?php echo $aligm['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $aligm['dir']; ?>"><span class="tb-<?php echo $aligm['img'] ?>"></span></a>
+                                <a href="#" class="tb_dir_select column-dir-<?php echo $aligm['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $aligm['dir']; ?>"><span class="tb_<?php echo $aligm['img'] ?>"></span></a>
                             </li>                                 
                         <?php endforeach; ?>
                         <li><?php _e('Column Direction', 'themify') ?></li>
                     </ul>
                 </div>
-                <div class="themify_builder_grid_tab themify_builder_grid_reposnive themify_builder_grid_mobile">
-                    <ul class="themify_builder_grid_list clearfix">
-                        <li class="selected"><a href="#" class="themify_builder_column_select tb1 mobile-auto" data-type="mobile" data-handle="<?php echo $handle; ?>"   data-col="1"  data-grid='["-auto"]'><span class="tb-grids tb-auto"></span></a></li>
-                        <?php foreach ($grid_lists as $li): ?>
-                            <li><a href="#" class="themify_builder_column_select tb<?php echo $li['col']; ?> grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="mobile" data-handle="<?php echo $handle; ?>"   data-col="<?php echo $li['col']; ?>"  data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb-grids tb-<?php echo $li['img'] ?>"></span></a></li>
+                <div class="tb_grid_tab tb_grid_reposnive tb_grid_tablet">
+                    <ul class="tb_grid_list clearfix">
+                        <li class="selected"><a href="#" class="tb_column_select tb1 tablet-auto" data-type="tablet" data-handle="<?php echo $handle; ?>" data-grid='["-auto"]'><span class="tb_grids tb_auto"></span></a></li>
+                        <?php foreach ($grid_lists as $k => $li): ?>
+                            <li><a href="#" class="tb_column_select tb<?php echo $li['col']; ?> grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="tablet" data-handle="<?php echo $handle; ?>" data-col="<?php echo $li['col']; ?>" data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb_grids tb_<?php echo $li['img'] ?>"></span></a></li>
                         <?php endforeach; ?>
                     </ul>
-                    <ul class="themify_builder_column_direction clearfix tb-actions">
+                    <ul class="tb_column_direction clearfix tb_actions">
                         <?php foreach ($column_direction as $aligm): ?>
                             <li<?php if ($aligm['dir'] === 'ltr') echo ' class="selected"' ?>>
-                                <a href="#" class="themify_builder_dir_select column-dir-<?php echo $aligm['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $aligm['dir']; ?>"><span class="tb-<?php echo $aligm['img'] ?>"></span></a>
+                                <a href="#" class="tb_dir_select column-dir-<?php echo $aligm['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $aligm['dir']; ?>"><span class="tb_<?php echo $aligm['img'] ?>"></span></a>
+                            </li>                                 
+                        <?php endforeach; ?>
+                        <li><?php _e('Column Direction', 'themify') ?></li>
+                    </ul>
+                </div>
+                <div class="tb_grid_tab tb_grid_reposnive tb_grid_mobile">
+                    <ul class="tb_grid_list clearfix">
+                        <li class="selected"><a href="#" class="tb_column_select tb1 mobile-auto" data-type="mobile" data-handle="<?php echo $handle; ?>"   data-col="1"  data-grid='["-auto"]'><span class="tb_grids tb_auto"></span></a></li>
+                        <?php foreach ($grid_lists as $li): ?>
+                            <li><a href="#" class="tb_column_select tb<?php echo $li['col']; ?> grid-layout-<?php echo esc_attr(implode('-', $li['data'])); ?>" data-type="mobile" data-handle="<?php echo $handle; ?>"   data-col="<?php echo $li['col']; ?>"  data-grid="<?php echo esc_attr(json_encode($li['data'])); ?>"><span class="tb_grids tb_<?php echo $li['img'] ?>"></span></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <ul class="tb_column_direction clearfix tb_actions">
+                        <?php foreach ($column_direction as $aligm): ?>
+                            <li<?php if ($aligm['dir'] === 'ltr') echo ' class="selected"' ?>>
+                                <a href="#" class="tb_dir_select column-dir-<?php echo $aligm['dir']; ?>" data-handle="<?php echo $handle; ?>" data-dir="<?php echo $aligm['dir']; ?>"><span class="tb_<?php echo $aligm['img'] ?>"></span></a>
                             </li>
                         <?php endforeach; ?>
                         <li><?php _e('Column Direction', 'themify') ?></li>
                     </ul>
                 </div>
-            </div>
-            <!-- /themify_builder_grid_list_wrapper -->
         </div>
-        <!-- /grid_menu -->
         <?php
     }
+    
+    public static function get_transient_time(){
+        return apply_filters('themify_builder_ticks',MINUTE_IN_SECONDS /2);
+    }
 
+    public static function set_edit_transient($post_id,$value){
+        
+        return set_transient(self::$transient_name.$post_id, $value,self::get_transient_time());
+    }
+    
+    public static function get_edit_transient($post_id){
+        return get_transient(self::$transient_name.$post_id);
+    }
+    
+    public static function remove_edit_transient($post_id){
+        return delete_transient(self::$transient_name.$post_id);
+    }
+    
+    public static function get_icon($icon){
+        if(strpos($icon,'fa-')===0){
+                $icon='fa '.$icon;
+}
+        return $icon;
+    }
+
+    /**
+     * Check if gutenberg active
+     * @return boolean
+     */
+    public static function is_gutenberg_active() {
+        static $is_active = null;
+        if($is_active===null){
+            $is_active = self::is_plugin_active('gutenberg/gutenberg.php');
+        }
+        return $is_active;
+    }
+    
+    /**
+    * Plugin Active checking
+    * 
+    * @access public
+    * @param string $plugin 
+    * @return bool
+    */
+   public static function is_plugin_active( $plugin ) {
+           static $plugins = null;
+           static $active_plugins = array();
+           if($plugins===null){
+               $plugins = is_multisite()?get_site_option( 'active_sitewide_plugins' ):false;
+               $active_plugins = (array) apply_filters( 'active_plugins', get_option( 'active_plugins' ));
+           }
+           return ($plugins!==false && isset( $plugins[ $plugin ] )) || in_array( $plugin, (array) $active_plugins );
+   }
+
+    /**
+     * Check if we are gutenberg editor
+     * @return boolean
+     */
+    public static function is_gutenberg_editor() {
+        return  !isset( $_GET['classic-editor'] ) && self::is_gutenberg_active();
+    }
+    
+    /**
+     * Get frame type
+     * @return string|boolean
+     */
+    public static function get_frame( $settings, $side ) {
+            if ( isset( $settings[ "{$side}-frame_type" ] ) && $settings[ "{$side}-frame_type" ] === $side . '-presets' && ! empty( $settings[ "{$side}-frame_layout" ] ) ) {
+                    return 'presets';
+            } elseif ( isset( $settings[ "{$side}-frame_type" ] ) && $settings[ "{$side}-frame_type" ] === $side . '-custom' && ! empty( $settings[ "{$side}-frame_custom" ] ) ) {
+                    return 'custom';
+            } else {
+                    return false;
+            }
+    }
 }

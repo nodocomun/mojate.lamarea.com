@@ -1,5 +1,13 @@
-
 <?php
+/**
+ * Template to display Slider field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-slider.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 if (!empty($meta_data[$args['key']])) {
     $js_data = array();
     foreach ($data as $key => $arg) {

@@ -3,7 +3,7 @@
 /**
  * The edit and add form class of custom taxonomy
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -297,19 +297,19 @@ class PTB_Form_CTX {
         $languages = PTB_Utils::get_all_languages();
 
         foreach ($languages as $code => $lng) {
-            $this->ctx->cl_search_items[$code] = !empty($this->ctx->cl_search_items[$code]) ? $this->ctx->cl_search_items[$code] : __('Search %s', 'ptb');
-            $this->ctx->cl_popular_items[$code] = !empty($this->ctx->cl_popular_items[$code])? $this->ctx->cl_popular_items[$code] : __('Popular %s', 'ptb');
-            $this->ctx->cl_all_items[$code] = !empty($this->ctx->cl_all_items[$code])? $this->ctx->cl_all_items[$code] : __('All %s', 'ptb');
-            $this->ctx->cl_parent_item[$code] = !empty($this->ctx->cl_parent_item[$code])? $this->ctx->cl_parent_item[$code] : __('Parent %s', 'ptb');
-            $this->ctx->cl_parent_item_colon[$code] = !empty($this->ctx->cl_parent_item_colon[$code])? $this->ctx->cl_parent_item_colon[$code] : __('Parent %s:', 'ptb');
-            $this->ctx->cl_edit_item[$code] = !empty($this->ctx->cl_edit_item[$code])? $this->ctx->cl_edit_item[$code] : __('Edit %s', 'ptb');
-            $this->ctx->cl_update_item[$code] = !empty($this->ctx->cl_update_item[$code]) ? $this->ctx->cl_update_item[$code] : __('Update %s', 'ptb');
-            $this->ctx->cl_add_new_item[$code] = !empty($this->ctx->cl_add_new_item[$code])? $this->ctx->cl_add_new_item[$code] : __('Add New %s', 'ptb');
-            $this->ctx->cl_new_item_name[$code] = !empty($this->ctx->cl_new_item_name[$code])? $this->ctx->cl_new_item_name[$code] : __('New %s Name', 'ptb');
-            $this->ctx->cl_separate_items_with_commas[$code] = !empty($this->ctx->cl_separate_items_with_commas[$code])? $this->ctx->cl_separate_items_with_commas[$code] : __('Separate %s with commas', 'ptb');
-            $this->ctx->cl_add_or_remove_items[$code] = !empty($this->ctx->cl_add_or_remove_items[$code])? $this->ctx->cl_add_or_remove_items[$code] : __('Add or remove %s', 'ptb');
-            $this->ctx->cl_choose_from_most_used[$code] = !empty($this->ctx->cl_choose_from_most_used[$code])? $this->ctx->cl_choose_from_most_used[$code] : __('Choose from the most used %s', 'ptb');
-            $this->ctx->cl_menu_name[$code] = !empty($this->ctx->cl_menu_name[$code])? $this->ctx->cl_menu_name[$code] : __('%s', 'ptb');
+            $this->ctx->search_items[$code] = !empty($this->ctx->search_items[$code]) ? $this->ctx->search_items[$code] : __('Search %s', 'ptb');
+            $this->ctx->popular_items[$code] = !empty($this->ctx->popular_items[$code])? $this->ctx->popular_items[$code] : __('Popular %s', 'ptb');
+            $this->ctx->all_items[$code] = !empty($this->ctx->all_items[$code])? $this->ctx->all_items[$code] : __('All %s', 'ptb');
+            $this->ctx->parent_item[$code] = !empty($this->ctx->parent_item[$code])? $this->ctx->parent_item[$code] : __('Parent %s', 'ptb');
+            $this->ctx->parent_item_colon[$code] = !empty($this->ctx->parent_item_colon[$code])? $this->ctx->parent_item_colon[$code] : __('Parent %s:', 'ptb');
+            $this->ctx->edit_item[$code] = !empty($this->ctx->edit_item[$code])? $this->ctx->edit_item[$code] : __('Edit %s', 'ptb');
+            $this->ctx->update_item[$code] = !empty($this->ctx->update_item[$code]) ? $this->ctx->update_item[$code] : __('Update %s', 'ptb');
+            $this->ctx->add_new_item[$code] = !empty($this->ctx->add_new_item[$code])? $this->ctx->add_new_item[$code] : __('Add New %s', 'ptb');
+            $this->ctx->new_item_name[$code] = !empty($this->ctx->new_item_name[$code])? $this->ctx->new_item_name[$code] : __('New %s Name', 'ptb');
+            $this->ctx->separate_items_with_commas[$code] = !empty($this->ctx->separate_items_with_commas[$code])? $this->ctx->separate_items_with_commas[$code] : __('Separate %s with commas', 'ptb');
+            $this->ctx->add_or_remove_items[$code] = !empty($this->ctx->add_or_remove_items[$code])? $this->ctx->add_or_remove_items[$code] : __('Add or remove %s', 'ptb');
+            $this->ctx->choose_from_most_used[$code] = !empty($this->ctx->choose_from_most_used[$code])? $this->ctx->choose_from_most_used[$code] : __('Choose from the most used %s', 'ptb');
+            $this->ctx->menu_name[$code] = !empty($this->ctx->menu_name[$code])? $this->ctx->menu_name[$code] : __('%s', 'ptb');
         }
         foreach ($fields as $key => $label) {
 
@@ -338,91 +338,91 @@ class PTB_Form_CTX {
             case PTB_Custom_Taxonomy::CL_SEARCH_ITEMS :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_SEARCH_ITEMS, $this->ctx->cl_search_items, false, __("The search items text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_SEARCH_ITEMS, $this->ctx->search_items, false, __("The search items text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_POPULAR_ITEMS :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_POPULAR_ITEMS, $this->ctx->cl_popular_items, false, __("The popular items text. This string is not used on hierarchical taxonomies.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_POPULAR_ITEMS, $this->ctx->popular_items, false, __("The popular items text. This string is not used on hierarchical taxonomies.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_ALL_ITEMS :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_ALL_ITEMS, $this->ctx->cl_all_items, false, __("The all items text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_ALL_ITEMS, $this->ctx->all_items, false, __("The all items text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_PARENT_ITEM :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_PARENT_ITEM, $this->ctx->cl_parent_item, false, __("The parent item text. This string is not used on non-hierarchical taxonomies such as post tags.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_PARENT_ITEM, $this->ctx->parent_item, false, __("The parent item text. This string is not used on non-hierarchical taxonomies such as post tags.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_PARENT_ITEM_COLON :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_PARENT_ITEM_COLON, $this->ctx->cl_parent_item_colon, false, __("The same as parent_item, but with colon : in the end.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_PARENT_ITEM_COLON, $this->ctx->parent_item_colon, false, __("The same as parent_item, but with colon : in the end.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_EDIT_ITEM :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_EDIT_ITEM, $this->ctx->cl_edit_item, false, __("The edit item text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_EDIT_ITEM, $this->ctx->edit_item, false, __("The edit item text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_UPDATE_ITEM :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_UPDATE_ITEM, $this->ctx->cl_update_item, false, __("The update item text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_UPDATE_ITEM, $this->ctx->update_item, false, __("The update item text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_ADD_NEW_ITEM :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_ADD_NEW_ITEM, $this->ctx->cl_add_new_item, false, __("The add new item text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_ADD_NEW_ITEM, $this->ctx->add_new_item, false, __("The add new item text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_NEW_ITEM_NAME :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_NEW_ITEM_NAME, $this->ctx->cl_new_item_name, false, __("The new item name text.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_NEW_ITEM_NAME, $this->ctx->new_item_name, false, __("The new item name text.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_SEPARATE_ITEMS_WITH_COMMAS :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_SEPARATE_ITEMS_WITH_COMMAS, $this->ctx->cl_separate_items_with_commas, false, __("The separate item with commas text used in the taxonomy meta box. This string is not used on hierarchical taxonomies.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_SEPARATE_ITEMS_WITH_COMMAS, $this->ctx->separate_items_with_commas, false, __("The separate item with commas text used in the taxonomy meta box. This string is not used on hierarchical taxonomies.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_ADD_OR_REMOVE_ITEMS :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_ADD_OR_REMOVE_ITEMS, $this->ctx->cl_add_or_remove_items, false, __("The add or remove items text and used in the meta box when JavaScript is disabled. This string is not used on hierarchical taxonomies.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_ADD_OR_REMOVE_ITEMS, $this->ctx->add_or_remove_items, false, __("The add or remove items text and used in the meta box when JavaScript is disabled. This string is not used on hierarchical taxonomies.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_CHOOSE_FROM_MOST_USED :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_CHOOSE_FROM_MOST_USED, $this->ctx->cl_choose_from_most_used, false, __("The choose from most used text used in the taxonomy meta box. This string is not used on hierarchical taxonomies.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_CHOOSE_FROM_MOST_USED, $this->ctx->choose_from_most_used, false, __("The choose from most used text used in the taxonomy meta box. This string is not used on hierarchical taxonomies.", 'ptb')
                 );
                 break;
 
             case PTB_Custom_Taxonomy::CL_MENU_NAME :
 
                 echo $this->generate_input_text(
-                                PTB_Custom_Taxonomy::CL_MENU_NAME, $this->ctx->cl_menu_name, false, __("The menu name text. This string is the name to give menu items. If not set, defaults to value of name label.", 'ptb')
+                                PTB_Custom_Taxonomy::CL_MENU_NAME, $this->ctx->menu_name, false, __("The menu name text. This string is the name to give menu items. If not set, defaults to value of name label.", 'ptb')
                 );
                 break;
         }
@@ -522,19 +522,14 @@ class PTB_Form_CTX {
                 $this->ctx = $this->options->get_custom_taxonomy($this->id);
             }
         }
-
+        $this->extract_data($input);
         if (!empty($this->id)) {
-
-            $this->extract_data($input);
-
             $this->options->edit_custom_taxonomy($this->id, $this->ctx);
 
             $message = sprintf(
                     __('Custom taxonomy "%1$s" successfully updated.', 'ptb'), $this->ctx->singular_label[$lng]
             );
         } else {
-
-            $this->extract_data($input);
 
             $this->options->add_custom_taxonomy($this->ctx);
 
@@ -561,23 +556,23 @@ class PTB_Form_CTX {
 
             // Extract custom labels
 
-            $this->ctx->cl_search_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_SEARCH_ITEMS)][$code]);
-            $this->ctx->cl_popular_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_POPULAR_ITEMS)][$code]);
-            $this->ctx->cl_all_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ALL_ITEMS)][$code]);
-            $this->ctx->cl_parent_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_PARENT_ITEM)][$code]);
-            $this->ctx->cl_parent_item_colon[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_PARENT_ITEM_COLON)][$code]);
-            $this->ctx->cl_edit_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_EDIT_ITEM)][$code]);
-            $this->ctx->cl_update_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_UPDATE_ITEM)][$code]);
-            $this->ctx->cl_add_new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ADD_NEW_ITEM)][$code]);
-            $this->ctx->cl_new_item_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_NEW_ITEM_NAME)][$code]);
-            $this->ctx->cl_separate_items_with_commas[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_SEPARATE_ITEMS_WITH_COMMAS)][$code]);
-            $this->ctx->cl_add_or_remove_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ADD_OR_REMOVE_ITEMS)][$code]);
-            $this->ctx->cl_choose_from_most_used[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_CHOOSE_FROM_MOST_USED)][$code]);
-            $this->ctx->cl_menu_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_MENU_NAME)] [$code]);
+            $this->ctx->search_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_SEARCH_ITEMS)][$code]);
+            $this->ctx->popular_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_POPULAR_ITEMS)][$code]);
+            $this->ctx->all_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ALL_ITEMS)][$code]);
+            $this->ctx->parent_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_PARENT_ITEM)][$code]);
+            $this->ctx->parent_item_colon[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_PARENT_ITEM_COLON)][$code]);
+            $this->ctx->edit_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_EDIT_ITEM)][$code]);
+            $this->ctx->update_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_UPDATE_ITEM)][$code]);
+            $this->ctx->add_new_item[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ADD_NEW_ITEM)][$code]);
+            $this->ctx->new_item_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_NEW_ITEM_NAME)][$code]);
+            $this->ctx->separate_items_with_commas[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_SEPARATE_ITEMS_WITH_COMMAS)][$code]);
+            $this->ctx->add_or_remove_items[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_ADD_OR_REMOVE_ITEMS)][$code]);
+            $this->ctx->choose_from_most_used[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_CHOOSE_FROM_MOST_USED)][$code]);
+            $this->ctx->menu_name[$code] = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::CL_MENU_NAME)] [$code]);
         }
         $this->ctx->slug = sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::SLUG)]);
 
-        $this->ctx->is_hierarchical = ( 'Yes' == sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::IS_HIERARCHICAL)]) );
+        $this->ctx->is_hierarchical = ( 'Yes' === sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::IS_HIERARCHICAL)]) );
 
         $custom_post_types = PTB_Options::get_all_post_types();
 
@@ -594,10 +589,10 @@ class PTB_Form_CTX {
 
         // Extract advanced options
 
-        $this->ctx->ad_publicly_queryable = ( 'Yes' == sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_PUBLICLY_QUERYABLE)]) );
-        $this->ctx->ad_show_ui = ( 'Yes' == sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_UI)]) );
-        $this->ctx->ad_show_tag_cloud = ( 'Yes' == sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_TAG_CLOUD)]) );
-        $this->ctx->ad_show_admin_column = ( 'Yes' == sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_ADMIN_COLUMN)]) );
+        $this->ctx->ad_publicly_queryable = ( 'Yes' === sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_PUBLICLY_QUERYABLE)]) );
+        $this->ctx->ad_show_ui = ( 'Yes' === sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_UI)]) );
+        $this->ctx->ad_show_tag_cloud = ( 'Yes' === sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_TAG_CLOUD)]) );
+        $this->ctx->ad_show_admin_column = ( 'Yes' === sanitize_text_field($input[$this->get_field_id(PTB_Custom_Taxonomy::AD_SHOW_ADMIN_COLUMN)]) );
     }
 
     /*     * *************************************************************************************************************** */
@@ -648,11 +643,9 @@ class PTB_Form_CTX {
      */
     private function generate_input_checkbox($id, $value, $title, $checked) {
 
-        $input = sprintf(
+        return sprintf(
                 '<label for="%1$s"><input type="checkbox" name="%2$s" id="%1$s" value="%3$s" %4$s> %5$s</label><br>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), esc_attr($value), checked($checked, true, false), esc_attr($title)
         );
-
-        return $input;
     }
 
     /**
@@ -675,11 +668,7 @@ class PTB_Form_CTX {
                 '</fieldset>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), checked($selected, true, false), checked($selected, false, false), __('Yes', 'ptb'), __('No', 'ptb')
         );
 
-        $description = sprintf('<p class="description">%s</p>', $description);
-
-        $result = empty($description) ? $input : $input . $description;
-
-        return $result;
+        return $input . sprintf('<p class="description">%s</p>', $description);
     }
 
     /**
@@ -702,7 +691,6 @@ class PTB_Form_CTX {
             $input = sprintf(
                     '<input type="%1$s" %2$s id="%3$s" name="%4$s" value="%5$s" />', $hidden ? 'hidden' : 'text', $hidden ? '' : 'class="regular-text"', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), esc_attr($value)
             );
-            $result = $input;
         } else {
 
             $languages = PTB_Utils::get_all_languages();
@@ -731,25 +719,7 @@ class PTB_Form_CTX {
             }
             $input .= '</ul>';
         }
-        $description = sprintf('<p class="description">%s</p>', $description);
-        $result = empty($description) ? $input : $input . $description;
-        return $result;
-    }
-
-    private function generate_select($id, $options_label_value, $selected = '') {
-
-        $options = '';
-        foreach ($options_label_value as $label => $value) {
-            $options .= sprintf(
-                    '<option value="%s" %s>%s</option>', esc_attr($value), selected($selected, $value, false), esc_attr($label)
-            );
-        }
-
-        $result = sprintf(
-                '<select id="%s" name="%s">%s</select>', esc_attr($this->get_field_id($id)), esc_attr($this->get_field_name($id)), $options
-        );
-
-        return $result;
+        return $input . sprintf('<p class="description">%s</p>', $description);
     }
 
 }

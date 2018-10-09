@@ -42,7 +42,6 @@
  * 		themify_shortcode_post_slider
  * 		themify_shortcode_author_box
  * 		themify_shortcode_box
- *		themify_fix_shortcode_empty_paragraph
  * 
  ***************************************************************************/
 
@@ -498,7 +497,7 @@ function themify_shortcode_slider( $atts, $content = null ){
 	$js_data['height'] = $height;
 
 	$strsldr = '<!-- shortcode slider --><div id="slider-' . esc_attr( $js_data['numsldr'] ) . '" class="shortcode clearfix slider ' . esc_attr( $class ) . '">
-	<ul data-slider=\''.esc_attr( json_encode( $js_data ) ). '\' class="slides">' . $content . '</ul>';	
+	<ul data-slider=\''.esc_attr( base64_encode( json_encode( $js_data ) ) ). '\' class="slides">' . $content . '</ul>';	
 	$strsldr .= '</div>
 		<!-- /shortcode slider -->';
 	return $strsldr;
@@ -570,7 +569,7 @@ function themify_shortcode_post_slider( $atts, $content = null ) {
 		$js_data['height'] = $height;
 		$js_data['numsldr'] = rand(0,1011).uniqid();
 		$postsliderstr = '<!-- shortcode post_slider --> <div id="slider-' . esc_attr(  $js_data['numsldr'] ) . '" style="width: ' . esc_attr( $width ) . ';" class="shortcode clearfix post-slider ' . $class . '">
-		<ul class="slides" data-slider=\''.esc_attr( json_encode( $js_data ) ).'\'>';
+		<ul class="slides" data-slider=\''.esc_attr( base64_encode( json_encode( $js_data ) ) ).'\'>';
 		unset($js_data);
 
 		$themify_save = clone $themify;
@@ -672,20 +671,6 @@ function themify_shortcode_box( $atts, $content = null ) {
 	. '</div> <!-- /shortcode box -->';
 
 	return $boxstr;
-}
-
-/**
- * Remove paragraphs wrapping shortcodes
- *
- * @param string $content
- *
- * @since 1.9.4
- *
- * @return string
- */
-function themify_fix_shortcode_empty_paragraph( $content ) {
-	$block = join( '|', array_keys( themify_shortcode_list() ) ) . '|themify_' . join( '|themify_', array_keys( themify_shortcode_list() ) );
-	return preg_replace( array( "/(<p>)?\[($block)(\s[^\]]+)?\](<\/p>|<br \/>)?/", "/(<p>)?\[\/($block)](<\/p>|<br \/>)?/" ), array( '[$2$3]', '[/$2]' ), $content );
 }
 
 /**

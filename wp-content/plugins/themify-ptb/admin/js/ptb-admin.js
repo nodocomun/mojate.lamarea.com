@@ -115,7 +115,11 @@
                     var $code = $(this).attr('id').replace(id + '_description_', '');
                     $(this).val(options.description[$code]);
                 });
-                $slug.val(id);
+                if ( typeof slug !== 'undefined' && slug !== '' && !ready ) {
+                    $slug.val(slug + '_' + id);
+                } else {
+                    $slug.val(id);
+                }
                 if (ready) {
                     $slug.prop('readonly', true);
                 }
@@ -229,6 +233,8 @@
                 });
             });
             $inputOptions.val(JSON.stringify(options));
+            $metaBoxItemsWrapper.find('[name]').removeAttr('name');
+            $('.ptb_cmb_item_wrapper').find('[name]').removeAttr('name');
         },
         getNextId = function (type) {
 
@@ -401,7 +407,11 @@
             }).on('focusout',$postMetaName,  function () {
                 var $id = $(this).closest('.ptb_cmb_item_wrapper').prop('id');
                 if (!$('#' + $id + '_slug').prop('readonly') && !$('#' + $id + '_slug').data('ptb_focus')) {
+					if ( typeof slug !== 'undefined' && slug !== '' ) {
+						$('#' + $id + '_slug').val(slug + '_' + sanitize_slug($(this).val())).trigger('focusout');
+					} else {
                     $('#' + $id + '_slug').val(sanitize_slug($(this).val())).trigger('focusout');
+                }
                 }
                 else {
                     $(this).off('focusout');
@@ -1283,7 +1293,7 @@
             e.preventDefault();
             e.data.option.hide('blind', 500, function () {
                 $(this).remove();
-            })
+            });
         }
 
     })
@@ -1413,7 +1423,7 @@
         };
     })
     .on('ptb_metabox_save_select', function (e) {
-        e.options.multipleSelects = $('input[name="' + e.id + '_multiple_selects"]:checked').val() == "Yes";
+        e.options.multipleSelects = $('input[name="' + e.id + '_multiple_selects"]:checked').val() === 'Yes';
         e.options.options = {};
         var $li = $('#' + e.id + '_options_wrapper').children('li');
         $li.each(function ($i) {
@@ -1725,14 +1735,240 @@
             });
         });
     });
-
+    PTB_Layout = {
+        init:function(){
+            var pre = $('#ptb_pre_wrapper'),
+                self = this;
+            if(pre.length>0){
+                $.getJSON('https://themify.me/ptb-layouts/index.json')
+                .done(function (data) {
+                    if(data){
+                        var html = '';
+                        for(var i in data){
+                            html+='<li>';
+                            html+='<div class="ptb_pre_overlay" style="background-image:url('+data[i].img+')"></div>';
+                            html+='<div class="ptb_pre_content"><a class="ptb_pre_zoom ti-search" href="'+data[i].url+'"></a>';
+                            html+='<div class="ptb_pre_import"><a target="_blank" href="'+data[i].url+'">'+data[i].title+'</a>';
+                            html+='<div class="ptb_pre_actions"><label><input type="checkbox" value="'+i+'" name="sample" />'+ptb_js.import_samples+'</label>';
+                            html+='<input class="ptb_pre_import_btn" type="button" data-slug="'+i+'" value="'+ptb_js.import+'" />';
+                            html+='</div></div></div></li>';
+                        }
+                        var ul = pre.find('ul');
+                        ul.empty();
+                        ul[0].insertAdjacentHTML('afterbegin',html);
+                        self.preview();
+                        self.import();
+                    }                
+                });
+            }
+        },
+        preview:function(){
+            $('.ptb_pre_zoom').click(function(e){
+               e.preventDefault(); 
+                openLightBox(e, '', '<iframe id="ptb_preview_iframe" src="'+$(this).prop('href')+'"></iframe>','ptb_preview_iframe_wrapper');
+            });
+        },
+        progress:function(state,val,count,total){
+            if(state==='loading'){
+                var html = '<div id="ptb_pre_progress_wrap" class="ptb_admin_lightbox"><div class="ptb_pre_progress"><div class="ptb_pre_progress_indicator">0%</div></div><div class="ptb_pre_progress_info"></div><div class="ptb_pre_progress_count"></div></div><div class="ptb_overlay"></div>';
+                document.body.insertAdjacentHTML('beforeend',html);
+            }
+            if(count && total){
+                 $('.ptb_pre_progress_count').html(count+' / '+total);
+            }
+            if(ptb_js.import_pre[state]!==undefined){
+                var msg = ptb_js.import_pre[state];
+                if(val){
+                    msg = msg.replace('%s',val);
+                }
+                $('.ptb_pre_progress_info').html(msg);
+            }
+        },
+        setIndicator:function(val){
+            val = val+'%';
+            $('.ptb_pre_progress').css('width',val).find('.ptb_pre_progress_indicator').html(val);
+        },
+        import:function(){
+            var self = this;
+            $('.ptb_pre_import_btn').click(function(e){
+                e.preventDefault(); 
+                var slug = $(this).data('slug'),
+                    cpt = $(this).closest('#ptb_pre_wrapper').data('cpt');
+                if($.inArray(slug,cpt)!==-1 && !confirm(ptb_js.confirm_import.replace('%s',slug))){
+                    return;
+                }
+                self.progress('loading');
+                var is_sample = $(this).closest('.ptb_pre_actions').find('input[type="checkbox"]').is(':checked');
+                self.setIndicator(10);
+                $.getJSON('https://themify.me/ptb-layouts/'+slug+'.json')
+                .done(function (cpt) {
+                    if(cpt){
+                        var callback = function(samples){
+                            self.setIndicator(80);
+                            self.progress('saving');
+                            return $.ajax({
+                                url:ajaxurl,
+                                type:'POST',
+                                dataType:'json',
+                                data:{
+                                    'slug':slug,
+                                    'cpt':JSON.stringify(cpt),
+                                    'action':'ptb_import_pre_cpt',
+                                    'samples':samples?JSON.stringify(samples):''
+                                },
+                                success:function(res){
+                                    if(res && res.status){
+                                        self.setIndicator(100);
+                                        self.progress('finish');
+                                    }
+                                    else{
+                                        alert('Something goes wrong');
+                                    }
+                                    setTimeout(function(){
+                                        $('#ptb_pre_progress_wrap,.ptb_overlay').remove();
+                                        if(res.status){
+                                             setTimeout(function(){
+                                                 window.location.reload();
+                                             },100);
+                                        }
+                                    },2000);
+                                }
+                            });  
+                        };
+                        self.progress('cpt',slug);
+                        self.setIndicator(is_sample?20:45);
+                        if(is_sample){
+                            self.progress('start_samples');
+                           var max,
+                            page = 1,
+                            all,
+                            arr = [],
+                            limit = 5,
+                            img_count=0,
+                            getSamples = function(){
+                                $.ajax({
+                                    url:'https://themify.me/demo/themes/post-type-builder/wp-json/wp/v2/'+slug+'?statuses=public&per_page='+limit+'&page='+page,//rest API
+                                    dataType:'json',
+                                    crossDomain: true,
+                                    success:function(res,status,response){
+                                        if(status==='success' && res){
+                                            if(!max){
+                                                max = response.getResponseHeader('X-WP-TotalPages');
+                                                all = response.getResponseHeader('X-WP-Total');
+                                            }
+                                            self.setIndicator(20+(page*limit));
+                                            self.progress(null,null,page*limit,all);
+                                            for(var i=0,len=res.length;i<len;++i){
+                                                var tax = {};
+                                                if(res[i].ptb_taxonomy){
+                                                    var ptb_tax = res[i].ptb_taxonomy;
+                                                    for(var k in ptb_tax){
+                                                        tax[k] = {};
+                                                        for(var j=0,tlen=ptb_tax[k].length;j<tlen;++j){
+                                                            tax[k][ptb_tax[k][j].slug] = ptb_tax[k][j].name;
+                                                        }
+                                                    }
+                                                }
+                                                if(res[i].ptb_featured_image){
+                                                    ++img_count;
+                                                }
+                                                self.progress('samples',res[i].title.rendered);
+                                                arr.push({
+                                                    'title':res[i].title.rendered,
+                                                    'excerpt':res[i].excerpt.rendered,
+                                                    'content':res[i].content.rendered,
+                                                    'meta':res[i].ptb_metabox?res[i].ptb_metabox:null,
+                                                    'tax':tax,
+                                                    'img':res[i].ptb_featured_image?res[i].ptb_featured_image:null
+                                                });
+                                            }
+                                            ++page;
+                                            if(page!=max){
+                                                setTimeout(getSamples,800);
+                                            }
+                                            else{
+                                                var total = 50;
+                                                self.progress('start_images',null,all,all);
+                                                self.setIndicator(total);
+                                                page =all = max = null;
+                                                var i=0,
+                                                    len=arr.length,
+                                                    getImage = function(){
+                                                        if(!arr[i].img){
+                                                            ++i;
+                                                            if(i<len){
+                                                              setTimeout(getImage,300);
+                                                            }
+                                                            return;
+                                                        }
+                                                        self.progress(null,null,i,img_count-1);
+                                                        var xhr = new XMLHttpRequest();
+                                                        self.progress('images',arr[i].img.url);
+                                                        
+                                                        self.setIndicator(total+i);
+                                                        xhr.open('GET', arr[i].img.url, true);
+                                                        xhr.responseType = 'blob';
+                                                        xhr.onload = function(e) {
+                                                           if (this.status === 200) {
+                                                             var formData = new FormData(),
+                                                                xhr2 = new XMLHttpRequest();
+                                                                formData.append('file',this.response);
+                                                                if(arr[i].img.title){
+                                                                    formData.append('title',arr[i].img.title);
+                                                                }
+                                                                if(arr[i].img.caption){
+                                                                    formData.append('caption',arr[i].img.caption);
+                                                                }
+                                                                xhr2.responseType = 'json';
+                                                                xhr2.open('POST', ajaxurl+'?action=ptb_upload_blob', true);
+                                                                xhr2.onload = function(e) { 
+                                                                    if(this.response.id){
+                                                                        arr[i].img = this.response.id;
+                                                                    }
+                                                                    ++i;
+                                                                    if(i<len){
+                                                                       setTimeout(getImage,300);
+                                                                    }
+                                                                    else{
+                                                                        callback(arr);
+                                                                    }
+                                                                };
+                                                                xhr2.send(formData);
+                                                                formData = xhr = null;
+                                                           }
+                                                        };
+                                                        xhr.onerror = function (e) {
+                                                            alert('Cant`t Load the image '+arr[i].url);
+                                                        };
+                                                        xhr.send();
+                                                    };
+                                                getImage();
+                                            }
+                                        }
+                                    },
+                                    error:function(){
+                                        alert("Can't get samples");
+                                    }
+                                });  
+                            };
+                            getSamples();
+                        }
+                        else{
+                            callback(null);
+                        }
+                        
+                    }
+                });
+            });
+        }
+    };
 
 })(jQuery);
-
 jQuery(document).ready(function () {
     InitLanguageTabs();
     ThemplateDelete();
     var $ = jQuery;
+    PTB_Layout.init();
     $('body').on('click', 'a.ptb_custom_lightbox', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -1747,8 +1983,10 @@ jQuery(document).ready(function () {
                 }
             }
         });
+    })
+    .on('ptb_pre_layout_update',function(){
+            PTB_Layout.init();
     });
-
 });
 var InitLanguageTabs = function () {
     var $ = jQuery;
@@ -1772,15 +2010,6 @@ var ThemplateDelete = function () {
         }
     });
 };
-var getDocHeight = function () {
-    var D = document;
-    return Math.max(
-            Math.max(D.body.scrollHeight, D.documentElement.scrollHeight),
-            Math.max(D.body.offsetHeight, D.documentElement.offsetHeight),
-            Math.max(D.body.clientHeight, D.documentElement.clientHeight)
-            );
-};
-
 var lightboxCloseKeyListener = function (e) {
     if (e.keyCode === 27) {
         e.preventDefault();
@@ -1797,24 +2026,20 @@ var openLightBox = function (e, title, content, $class, $top) {
             '<a href="#" class="ptb_close_lightbox">×</a>' +
             '<div id="ptb_lightbox_container">' +
             '<div class="ptb_lightbox_inner">' + content + '</div>' +
-            '</div>' +
-            '</div>' +
-            '<div class="ptb_overlay"></div>';
+            '</div></div><div class="ptb_overlay"></div>';
     $(document).on('keyup', lightboxCloseKeyListener);
     $('body').append($lightbox);
-    if (!$top) {
-        $top = 100;
-    }
+     var el = $('#' + $uniqid);
     if ($class) {
-        $('#' + $uniqid).addClass($class);
+        el.addClass($class);
     }
-    $.event.trigger("PTB.openlightbox", [e, $uniqid]);
-    var el = $('#' + $uniqid);
-    el.next('.ptb_overlay').show();
-    el.show().css('top', getDocHeight()).animate({
-        top: $top
-    }, 800).find('.ptb_close_lightbox').click(closeLightBox);
-
+    el.show();
+    setTimeout(function(){
+        el.addClass('ptb_lightbox_show').one('transitionend webkitTransitionEnd oTransitionEnd',function(){
+            $.event.trigger("PTB.openlightbox", [e, $uniqid]);
+        }).find('.ptb_close_lightbox').click(closeLightBox); 
+    },100);
+    
 };
 
 var closeLightBox = function (e) {
@@ -1823,10 +2048,8 @@ var closeLightBox = function (e) {
         $container = $(this).closest('.ptb_admin_lightbox');
     $(document).off('keyup', lightboxCloseKeyListener);
     $.event.trigger('PTB.close_lightbox', this);
-    $container.animate({
-        top: getDocHeight()
-    }, 800, function () {
-        $container.next('.ptb_overlay').remove();
-        $container.remove();
+    $container.removeClass('ptb_lightbox_show').one('transitionend webkitTransitionEnd oTransitionEnd',function(){
+        $(this).next('.ptb_overlay').remove();
+        $(this).remove();
     });
 };

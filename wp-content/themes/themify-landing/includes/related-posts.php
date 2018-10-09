@@ -40,13 +40,16 @@ if ( $terms ) {
 			<h4 class="related-title"><?php _e( 'Related Posts', 'themify' ); ?></h4>
 			<?php while ( $related->have_posts() ) : $related->the_post(); ?>
 				<article class="post type-post clearfix">
-
-					<?php if ( ! themify_check( $key . '_hide_image' ) && has_post_thumbnail() ) : ?>
-						<?php if ( $post_image = themify_get_image( 'setting=image_post_single&w=255&h=155&ignore=true' ) ) : ?>
+					<?php if ( ! themify_check( $key . '_hide_image' ) ) : ?>
+						<?php if ( themify_has_post_video() ) : ?>
+							<figure class="post-image clearfix">
+								<?php echo themify_post_video(); ?>
+							</figure>
+						<?php elseif( has_post_thumbnail() && $post_image = themify_get_image( 'setting=image_post_single&w=255&h=155&ignore=true' ) ): ?>
 							<figure class="post-image clearfix">
 								<a href="<?php echo themify_get_featured_image_link(); ?>"><?php echo $post_image; ?><?php themify_zoom_icon(); ?></a>
 							</figure>
-						<?php endif; // if there's a featured image?>
+						<?php endif; ?>
 					<?php endif; ?>
 
 					<div class="post-content">

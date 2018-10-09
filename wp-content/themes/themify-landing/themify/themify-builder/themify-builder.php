@@ -2,11 +2,11 @@
 
 /**
  * Framework Name: Themify Builder
- * Framework URI: http://themify.me/
+ * Framework URI: https://themify.me/
  * Description: Page Builder with interactive drag and drop features
  * Version: 1.0
  * Author: Themify
- * Author URI: http://themify.me
+ * Author URI: https://themify.me
  *
  *
  * @package ThemifyBuilder
@@ -91,7 +91,6 @@ if (!function_exists('themify_manage_builder')) {
      * @since 1.2.7
      */
     function themify_manage_builder($data = array()) {
-        global $ThemifyBuilder;
         $data = themify_get_data();
         $pre = 'setting-page_builder_';
 
@@ -100,7 +99,7 @@ if (!function_exists('themify_manage_builder')) {
         foreach ($modules as $m) {
             $exclude = $pre . 'exc_' . $m['id'];
             $checked = !empty($data[$exclude]) ? 'checked="checked"' : '';
-            $output .= '<p><span><input id="' . 'builder_module_' . $m['id']. '" type="checkbox" name="' . esc_attr($exclude) . '" value="1" ' . $checked . '/> <label for="' . 'builder_module_' . $m['id'] . '">' . wp_kses_post(sprintf(__('Exclude %s module', 'themify'), $m['name'])) . '</label></span></p>';
+            $output .= '<p><span><input id="builder_module_' . $m['id']. '" type="checkbox" name="' . $exclude . '" value="1" ' . $checked . '/> <label for="builder_module_' . $m['id'] . '">' . wp_kses_post(sprintf(__('Exclude %s module', 'themify'), $m['name'])) . '</label></span></p>';
         }
 
         return $output;
@@ -131,6 +130,10 @@ if (!function_exists('themify_manage_builder_active')) {
 
             $output .= sprintf('<p><label for="%s"><input type="checkbox" id="%s" name="%s"%s> %s</label></p>', $pre . 'disable_shortcuts', $pre . 'disable_shortcuts', $pre . 'disable_shortcuts', checked('on', themify_builder_get($pre . 'disable_shortcuts', 'builder_disable_shortcuts'), false), wp_kses_post(__('Disable Builder shortcuts (eg. disable shortcut like Cmd+S = save)', 'themify'))
             );
+
+			// Disable WP editor
+			$output .= sprintf('<p><label for="%s"><input type="checkbox" id="%s" name="%s"%s> %s</label></p>', $pre . 'disable_wp_editor', $pre . 'disable_wp_editor', $pre . 'disable_wp_editor', checked('on', themify_builder_get($pre . 'disable_wp_editor', 'builder_disable_wp_editor'), false), wp_kses_post(__('Disable WordPress editor when Builder is in use', 'themify'))
+            );
         }
 
         return $output;
@@ -159,7 +162,9 @@ if (!function_exists('themify_manage_builder_animation')) {
         );
         $output .= sprintf('<p><label for="%s" class="label">%s</label><select id="%s" name="%s">%s</select></p>', $pre . 'parallax_bg', esc_html__('Parallax Background', 'themify'), $pre . 'parallax_bg', $pre . 'parallax_bg', themify_options_module($options, $pre . 'parallax_bg')
         );
-        $output .= sprintf('<p><label for="%s" class="label">%s</label><select id="%s" name="%s">%s</select></p>', $pre . 'parallax_scroll', esc_html__('Parallax Scrolling', 'themify'), $pre . 'parallax_scroll', $pre . 'parallax_scroll', themify_options_module($options, $pre . 'parallax_scroll', true, 'mobile')
+        $output .= sprintf('<p><label for="%s" class="label">%s</label><select id="%s" name="%s">%s</select></p>', $pre . 'parallax_scroll', esc_html__('Float Scrolling', 'themify'), $pre . 'parallax_scroll', $pre . 'parallax_scroll', themify_options_module($options, $pre . 'parallax_scroll', true, 'mobile')
+        );
+        $output .= sprintf('<p><label for="%s" class="label">%s</label><select id="%s" name="%s">%s</select></p>', $pre . 'sticky_scroll', esc_html__('Sticky Scrolling', 'themify'), $pre . 'sticky_scroll', $pre . 'sticky_scroll', themify_options_module($options, $pre . 'sticky_scroll')
         );
         $output .= sprintf('<span class="pushlabel"><small>%s</small></span>', esc_html__('If animation is disabled, the element will appear static', 'themify')
         );
@@ -200,6 +205,4 @@ function themify_framework_theme_config_add_builder($themify_theme_config) {
     return $themify_theme_config;
 }
 
-;
 add_filter('themify_theme_config_setup', 'themify_framework_theme_config_add_builder');
-

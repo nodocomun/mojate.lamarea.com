@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display Map field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-map.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 $vals = $meta_data[$args['key']];
 $is_empty = empty($data['default']);
 if ($is_empty && (!$vals || empty($vals['place']))) {

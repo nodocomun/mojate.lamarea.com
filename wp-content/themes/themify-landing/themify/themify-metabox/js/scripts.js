@@ -23,6 +23,7 @@ window.Themify_Metabox = (function($){
 		api.post_meta_checkbox();
 
 		api.init_fields( $( 'body' ) );
+		api.audioRemoveAction();
 	},
 
 	// create the tabs in custom meta boxes
@@ -80,10 +81,41 @@ window.Themify_Metabox = (function($){
 				new_id++;
 			}
 
-			template = template.replace( /__i__/g, new_id );
-			rows.append( template );
+			var $template = $( template.replace( /__i__/g, new_id ) );
+			$template.find( '.ajaxnonceplu' ).attr( 'id', '' );
+			rows.append( $template );
+
+			if( $template.has( '.plupload-upload-uic' ).length ) {
+				$template.find( '.plupload-upload-uic' )
+					.each( function () {
+						themify_create_pluploader( $( this ) );
+					} );
+			}
 			// init field types for the new row
 			api.init_fields( rows.find('.themify-repeater-row:last-child') );
+		} );
+
+		$( 'body' ).on( 'click', '.themify-repeater-remove-row', function( e ) {
+			e.preventDefault();
+
+			$( this ).parent().remove();
+		} );
+	}
+
+	api.audioRemoveAction = function() {
+		$( 'body' ).on( 'click', '[data-audio-remove] a', function( e ) {
+			e.preventDefault();
+
+			var $self = $( this ).parent(),
+				data = $self.data( 'audio-remove' ),
+				callback = function() {
+					$self.parent().find( '.themify_upload_field' ).val('');
+					$self.addClass( 'hide' );
+				};
+			
+			callback();
+			data.action = 'themify_remove_audio';
+			$.post( ajaxurl, data, callback );
 		} );
 	}
 
@@ -120,25 +152,28 @@ window.Themify_Metabox = (function($){
 				dateformat = $self.data('dateformat' ),
 				timeformat = $self.data('timeformat' ),
 				timeseparator = $self.data('timeseparator' );
-			$self.datetimepicker({
-				showOn: 'both',
-				showButtonPanel: true,
-				closeButton: close,
-				buttonText: label,
-				dateFormat: dateformat,
-				timeFormat: timeformat,
-				stepMinute: 5,
-				firstDay: $self.data( 'first-day' ),
-				separator: timeseparator,
-				onClose: function( date ) {
-					if ( '' != date ) {
-						$( '#' + $self.data('clear') ).addClass('themifyFadeIn');
+			
+			( $.fn.themifyDatetimepicker 
+				? $.fn.themifyDatetimepicker 
+				: $.fn.datetimepicker ).call( $self, {
+					showOn: 'both',
+					showButtonPanel: true,
+					closeButton: close,
+					buttonText: label,
+					dateFormat: dateformat,
+					timeFormat: timeformat,
+					stepMinute: 5,
+					firstDay: $self.data( 'first-day' ),
+					separator: timeseparator,
+					onClose: function( date ) {
+						if ( '' != date ) {
+							$( '#' + $self.data('clear') ).addClass('themifyFadeIn');
+						}
+					},
+					beforeShow: function() {
+						$('#ui-datepicker-div').addClass( 'themifyDateTimePickerPanel' );
 					}
-				},
-				beforeShow: function() {
-					$('#ui-datepicker-div').addClass( 'themifyDateTimePickerPanel' );
-				}
-			});
+				});
 			$self.next().addClass('button');
 		});
 
@@ -220,23 +255,23 @@ window.Themify_Metabox = (function($){
 
 		$context.find( '.themify_field_row[data-hide]' ).each( function() {
 			var dataHide = $( this ).data( 'hide' ),
-				hideValue, $selector;
+				hideValues, $selector;
 
 			if( typeof dataHide === 'string' ) {
 				dataHide = dataHide.split( ' ' );
 
 				if( dataHide.length > 1 ) {
-					hideValue = dataHide.shift();
+					hideValues = dataHide.shift();
+					hideValues = hideValues.split( '|' );
 					$selector = $( '.' + dataHide.join( ', .' ) );
 
 					$( 'select, input', this ).on( 'change', function() {
-						var value = $( this ).val(),
-							mode = hideValue === value ? 'hide' : 'show';
+						var value = $( this ).val();
 
-						if( mode === 'show' && $selector.is( ':visible' ) ) return;
-						$.fn[ mode ].call( $selector );
+						if( ! hideValues.includes( value ) && $selector.is( ':visible' ) ) return;
+						$selector.toggle( ! hideValues.includes( value ) );
 					} ).trigger( 'change' );
-	}
+				}
 			}
 		} );
 	}

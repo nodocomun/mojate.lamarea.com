@@ -3,7 +3,7 @@
 /**
  * The plugin options management class
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB

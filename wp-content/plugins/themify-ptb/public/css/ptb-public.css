@@ -32,11 +32,8 @@ iframe, object, embed {
 
 /* set general layout elements box-sizing */
 img, .ptb_post, .ptb_post_nav, .ptb_pagenav, .ptb_col {
-    -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
-
-
 /************************************************************************************
 GRID & COLUMNS
 *************************************************************************************/
@@ -53,21 +50,17 @@ GRID & COLUMNS
     -ms-flex-pack: justify;
     justify-content: space-between;
 }
-
 .ptb_row input,
 .ptb_row textarea,
 .ptb_row select {
-    -moz-box-sizing: border-box;
     box-sizing: border-box;
     max-width: 100%;
-
 }
 .ptb_col {
     width: 100%;
     margin-left: 0;
     margin-right: 0;
 }
-
 .ptb_col.ptb_col6-1 {
     -webkit-flex-basis: 14%;
     -ms-flex-preferred-size: 14%;
@@ -155,10 +148,17 @@ div.ptb_loops_wrapper .ptb_post{
     margin-top: 0;
     margin-right: 0;
     clear: none !important;
+}
+div.ptb_loops_wrapper:not(.ptb_masonry) .ptb_post{
     position:relative !important;
     top:0 !important;
     left:0 !important;
 }
+.ptb_loops_wrapper .ptb_post .ptb_items_wrapper.entry-content {
+	width: 100%;
+	margin: 0;
+}
+
 /* post pagination */
 .ptb_pagenav {
     margin-bottom: 3em;
@@ -181,17 +181,14 @@ div.ptb_loops_wrapper .ptb_post{
 .ptb_post_title a {
     text-decoration: none;
 }
-
 /* post image */
 .ptb_post_image {
     margin: 0 0 1em;
 }
-
 /* post date */
 .ptb_post_date {
     margin: 0 0 .8em;
 }
-
 /*
 LISt POST
 ================================================ */
@@ -204,16 +201,20 @@ LISt POST
 /*
 GRID4 POST
 ================================================ */
+.ptb_loops_wrapper.ptb_grid4 .ptb_post_sizer{ width: 22.6%; }
 .ptb_loops_wrapper.ptb_grid4 .ptb_post {
     width: 22.6%;
     margin-left: 3.2%;
     float: left;
     margin-bottom: 2.5em;
 }
-
+.ptb_gutter_sizer{
+    width:3.2%;
+}
 /*
 GRID3 POST
 ================================================ */
+.ptb_loops_wrapper.ptb_grid3 .ptb_post_sizer{ width: 31.2%; }
 .ptb_loops_wrapper.ptb_grid3 .ptb_post {
     width: 31.2%;
     margin-left: 3.2%;
@@ -224,21 +225,26 @@ GRID3 POST
 /*
 GRID2 POST
 ================================================ */
+.ptb_loops_wrapper.ptb_grid2 .ptb_post_sizer{ width: 48.2%; }
 .ptb_loops_wrapper.ptb_grid2 .ptb_post {
     width: 48.4%;
     margin-left: 3.2%;
     float: left;
 }
 
+.ptb_post_sizer{ width: 100%; }
 /*
 CLEAR GRID FLOAT
 ================================================ */
 .ptb-post-filter+.ptb_loops_wrapper .ptb-isotop-filter-clear,
-.ptb_loops_wrapper.ptb_grid4:not(.ptb-isotop-filter) .ptb_post:nth-of-type(4n+1),
-.ptb_loops_wrapper.ptb_grid3:not(.ptb-isotop-filter) .ptb_post:nth-of-type(3n+1),
-.ptb_loops_wrapper.ptb_grid2:not(.ptb-isotop-filter) .ptb_post:nth-of-type(2n+1) {
+.ptb_loops_wrapper.ptb_grid4:not(.ptb-isotop-filter):not(.ptb_masonry) .ptb_post:nth-of-type(4n+1),
+.ptb_loops_wrapper.ptb_grid3:not(.ptb-isotop-filter):not(.ptb_masonry) .ptb_post:nth-of-type(3n+1),
+.ptb_loops_wrapper.ptb_grid2:not(.ptb-isotop-filter):not(.ptb_masonry) .ptb_post:nth-of-type(2n+1) {
     margin-left: 0 !important;
     clear: left !important;
+}
+.ptb_loops_wrapper.ptb_masonry .ptb_post {
+	margin-left: 0;
 }
 
 /************************************************************************************
@@ -313,7 +319,6 @@ COMMENTS
     margin: 0 0 0 7%;
     padding: 0;
 }
-
 /* reply link */
 .commentlist .reply {
     position: absolute;
@@ -327,7 +332,6 @@ COMMENTS
 .commentlist .comment-reply-link:hover {
     text-decoration: none;
 }
-
 /* 
 COMMENT FORM
 ================================================ */
@@ -409,13 +413,23 @@ CLEAR & ALIGNMENT
     width: 100%;
     float: left;
     box-sizing: border-box;
-    -moz-box-sizing: border-box;
 }
 
 
 /************************************************************************************
 RESPONSIVE
 *************************************************************************************/
+@media screen and (max-width: 800px) {
+	.ptb_loops_wrapper.ptb_grid4 .ptb_post {
+		width: 48.4%;
+		margin-left: 3.2%;
+		float: left;
+	}
+	.ptb_loops_wrapper.ptb_grid4:not(.ptb-isotop-filter):not(.ptb_masonry) .ptb_post:nth-of-type(2n+1) {
+		margin-left: 0 !important;
+		clear: left !important;
+	}
+}
 @media screen and (max-width: 600px) {
 
     /* commentlist responsive */
@@ -451,7 +465,7 @@ RESPONSIVE
         margin-left: 0;
     }
     .ptb_loops_wrapper .ptb_post img {
-            width: 100%;
+        width: 100%;
     }
 
 }
@@ -464,7 +478,6 @@ RESPONSIVE
     text-align: left;
     margin: 0 auto;
     box-sizing: border-box;
-    -moz-box-sizing: border-box;
     max-height: 800px;
     overflow: auto;
 }
@@ -518,13 +531,7 @@ ul.ptb-post-filter li {
 ul.ptb-post-filter li a {
     text-decoration: none;
     margin: 0;
-    -webkit-transition: color .2s ease;
-    -moz-transition: color .2s ease;
-    -ms-transition: color .2s ease;
-    -o-transition: color .2s ease;
     transition: color .2s ease;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
     box-sizing: border-box;
     display: block;
 }
@@ -539,10 +546,6 @@ ul.ptb-post-filter li ul {
 ul.ptb-post-filter li ul li {
     max-height: 0;
     position: absolute;
-    -webkit-transition: max-height 0.4s ease-out;
-    -moz-transition: max-height 0.4s ease-out;
-    -ms-transition: max-height 0.4s ease-out;
-    -o-transition: max-height 0.4s ease-out;
     transition: max-height 0.4s ease-out;
     background: #ffffff;
     z-index: 4;
@@ -578,6 +581,7 @@ ul.ptb-post-filter li ul li:hover > ul > li {
 
 ul.ptb-post-filter {
     text-align: center;
+    margin: 0;
     margin-bottom: 2em;
 }
 ul.ptb-post-filter>li {
@@ -614,8 +618,6 @@ POST NAVIGATION
 .ptb-post-nav .ptb-next {
     width: 47%;
     position: relative;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
 .ptb-post-nav .ptb-prev {
@@ -664,8 +666,6 @@ POST NAVIGATION
     margin-top: -20px;
     position: absolute;
     top: 50%;
-    -webkit-transform: rotate(45deg);
-    -moz-transform: rotate(45deg);
     transform: rotate(45deg);
 }
 .ptb-post-nav .ptb-next .ptb-arrow:before {
@@ -704,6 +704,6 @@ POST NAVIGATION
 .ptb_gravatar{
     margin-right: 6px;
 }
-.ptb_single_content{
+.ptb_single_content:not(.post-password-required){
     display:none !important;
 }

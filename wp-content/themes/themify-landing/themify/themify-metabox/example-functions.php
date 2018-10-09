@@ -255,3 +255,24 @@ function themify_metabox_example_user_fields( $fields ) {
 	return $fields;
 }
 add_filter( 'themify_metabox/user/fields', 'themify_metabox_example_user_fields' );
+
+/**
+ * Add a sample Color field to Category taxonomy
+ *
+ * @since 1.0.3
+ * @return array
+ */
+function themify_metabox_example_category_fields( $fields ) {
+	$new_fields = array(
+		array(
+			'name'        => 'color_field',
+			'title'       => __( 'Color', 'themify' ),
+			'description' => '',
+			'type'        => 'color',
+			'meta'        => array( 'default' => null ),
+		),
+	);
+
+	return array_merge( $fields, $new_fields );
+}
+add_filter( 'themify_metabox/taxonomy/category/fields', 'themify_metabox_example_category_fields', 10 );

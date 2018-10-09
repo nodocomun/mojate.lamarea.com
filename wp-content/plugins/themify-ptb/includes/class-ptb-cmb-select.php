@@ -2,7 +2,7 @@
 /**
  * Custom meta box class of type Select
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -159,11 +159,11 @@ class PTB_CMB_Select extends PTB_CMB_Base {
         if (!is_array($value)) {
             $value = array($value);
         }
-        $name = sprintf('%s[]', $meta_key);
         ?>
-        <select <?php echo $args['multipleSelects'] ? 'multiple' : ''; ?> name="<?php echo $name; ?>">
+        <select <?php echo $args['multipleSelects'] ? 'multiple' : ''; ?> name="<?php echo $meta_key; ?>[]">
             <?php foreach ($args['options'] as $option): ?>
-                <option value="<?php echo $option['id']; ?>" <?php echo !empty($value) && in_array($option['id'], $value) ? 'selected' : ''; ?>><?php echo PTB_Utils::get_label($option); ?></option>
+                <?php $label = PTB_Utils::get_label($option);?>
+                <option value="<?php echo !empty($label)?$option['id']:''; ?>" <?php echo !empty($value) && in_array($option['id'], $value) ? 'selected' : ''; ?>><?php echo $label; ?></option>
             <?php endforeach; ?>
         </select>
         <?php

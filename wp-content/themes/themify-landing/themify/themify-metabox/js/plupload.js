@@ -117,7 +117,7 @@ function themify_create_pluploader(obj) {
 			$j('#' + imgId).val(response_url);
 
 		if ( typeof json.thumb !== 'undefined' ) {
-			themifyMediaLib.setPreviewIcon( $this.closest( '.themify_field_row' ), json.thumb );
+			themifyMediaLib.setPreviewIcon($this.closest( '.themify_field, .themify_field_row' ), json.thumb );
 			$j( 'body' ).trigger( 'themify_plupload_selected', [ $this, json ] );
 		}
 

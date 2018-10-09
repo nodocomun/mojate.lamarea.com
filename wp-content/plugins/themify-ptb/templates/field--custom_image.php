@@ -2,6 +2,8 @@
 /**
  * Custom Image field template
  *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field--custom_image.php
+ *
  * @var string $type
  * @var array $args
  * @var array $data

@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display Rating field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-rating.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 $readonly = !empty($args['readonly']);
 $wp_meta_key = sprintf('%s_%s', $this->get_plugin_name(), $args['key']);
 $vote = get_post_meta($meta_data['ID'], $wp_meta_key, true);

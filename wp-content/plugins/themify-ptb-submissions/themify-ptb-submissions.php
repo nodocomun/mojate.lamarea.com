@@ -2,14 +2,14 @@
 /**
  * Plugin Name:       PTB Submissions
  * Plugin URI:        https://themify.me/ptb-addons/submissions
- * Description:       Addon to use with Post Type Builder plugin that allows users to submit and manage custom posts on frontend.
- * Version:           1.2.7
+ * Description:       PTB addon to use with Post Type Builder plugin that allows users to submit and manage custom posts on frontend.
+ * Version:           1.3.1
  * Author:            Themify
- * Author URI:        http://themify.me
+ * Author URI:        https://themify.me
  * Text Domain:       ptb-submission
  * Domain Path:       /languages
  *
- * @link              http://themify.me
+ * @link              https://themify.me
  * @since             1.0.0
  * @package           PTB
  */
@@ -69,7 +69,15 @@ function ptb_submission_activate() {
             'post_type' => 'page'
         ));
     }
-    $capabilities = array('read' => true);
+	if ( get_role('ptb') ) {
+		if ( !get_option('ptb_submission_updated_authors', false) ) {
+			update_option('ptb_submission_updated_authors', false);
+		}
+		remove_role( 'ptb' );
+	} else {
+		update_option('ptb_submission_updated_authors', true);
+	}
+    $capabilities = array('read' => true, 'level_1' => true);
     $capabilities = apply_filters('ptb_submission_role', $capabilities);
     add_role('ptb', __('PTB Author', 'ptb-submission'), $capabilities);
 }

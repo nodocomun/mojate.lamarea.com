@@ -5,7 +5,7 @@
  *
  * This class helps to manipulate with Post Type Templates
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB

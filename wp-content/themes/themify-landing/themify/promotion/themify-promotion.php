@@ -15,5 +15,5 @@ function themify_more_themes() {
 	if ( ! current_user_can( 'manage_options' ) )
 		wp_die( __( 'You do not have sufficient permissions to update this site.', 'themify' ) );
 	
-	include_once THEMIFY_DIR . '/themify-promotion/template.php';
+	include_once THEMIFY_DIR . '/promotion/template.php';
 }

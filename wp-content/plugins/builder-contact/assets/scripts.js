@@ -4,19 +4,22 @@
 		var $body = $('body');
 
 		function send_form(form) {
-			var data = $(form).serialize();
-
-			data += '&action=builder_contact_send';
-			data += '&contact-settings=' + $('.builder-contact-form-data', form).html();
+            var data = new FormData($(form)[0]); //+
+            data.append("action", "builder_contact_send");//+
+            data.append("contact-settings",  $('.builder-contact-form-data', form).html());//+
 			if (form.find('[name="g-recaptcha-response"]').length > 0) {
-				data += '&contact-recaptcha=' + form.find('[name="g-recaptcha-response"]').val();
+                data.append("contact-recaptcha",  form.find('[name="g-recaptcha-response"]').val());//+
 			}
 			$.ajax({
 				url: form.prop('action'),
 				method: 'POST',
+                enctype: 'multipart/form-data',//+
+                processData: false,//+
+                contentType: false,//+
+                cache: false,//+
 				data: data,
-				dataType: 'json',
 				success: function (data) {
+					data = $.parseJSON(data);
 					if (data && data.themify_message) {
 						form.find('.contact-message').html(data.themify_message).fadeIn();
 						form.removeClass('sending');

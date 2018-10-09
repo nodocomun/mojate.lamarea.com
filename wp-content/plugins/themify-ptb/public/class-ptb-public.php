@@ -2,7 +2,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -202,7 +202,8 @@ class PTB_Public {
         $translation_ = array(
             'url' => $plugin_url,
             'ver' => $this->version,
-            'min'=>$min_files
+            'min'=>$min_files,
+            'include'=>includes_url('js/')
         );
 
         wp_register_script($this->plugin_name, PTB_Utils::enque_min($plugin_url . 'js/ptb-public.js'), array(), $this->version, false);
@@ -404,12 +405,16 @@ class PTB_Public {
             $register = false;
             if (self::$template) {
                 self::$post_ids = array();
+                $data = self::$template->get_archive();
                 if (!is_category()) {
-                    $grid = self::$template->get_archive();
-                    $grid = 'ptb_' . $grid[self::$options->prefix_ptt_id . 'layout_post'];
+                    $grid = 'ptb_' . $data[self::$options->prefix_ptt_id . 'layout_post'];
                 } else {
                     $grid = '';
                 }
+                if(!empty($data[self::$options->prefix_ptt_id . 'masonry']) && $grid!=='list-post'){
+                    $grid.=' ptb_masonry';
+                }
+                unset($data);
                 $register = true;
                 echo '<div class="ptb_loops_wrapper ' . $grid . ' clearfix">';
             } elseif (self::$is_single) {
@@ -539,8 +544,8 @@ class PTB_Public {
                             if ($t && $t->has_archive()) {
                                 $tmp_args['post_type'] = $type;
 
-                                $tmp_query = new WP_Query($tmp_args);
-                                if ($tmp_query->have_posts()) {
+                                $tmp_query = get_posts($tmp_args);
+                                if (!empty($tmp_query)) {
                                     self::$template = $t;
                                     $post_type = $type;
                                     unset($tmp_query);
@@ -626,12 +631,18 @@ class PTB_Public {
             'posts_per_page' => isset($atts['posts_per_page']) && intval($atts['posts_per_page']) > 0 ? $atts['posts_per_page'] : get_option('posts_per_page'),
             'paged' => isset($atts['paged']) && $atts['paged'] > 0 ? intval($atts['paged']) : (is_front_page() ? get_query_var('page', 1) : get_query_var('paged', 1)),
             'logic' => 'AND',
-            'not_found'=>''
+            'not_found' => '',
         );
         if (isset($atts['offset']) && intval($atts['offset']) > 0) {
-            $args['offset'] = intval($atts['offset']);
+            $args['offset'] =(int)$atts['offset'];
+        }
+		if (isset($atts['ptb_widget'])) {
+			unset($atts['ptb_widget']);
+            $ptb_widget = true;
+            $args['paged'] = isset($atts['paged']) && $atts['paged'] > 0 ? intval($atts['paged']) : get_query_var('ptb_paged', 1);
         }
         $args = wp_parse_args($atts, $args);
+		$return = isset( $atts['return'] ) ? $atts['return'] : 'html';
         unset($atts);
         if (!$args['paged'] || !is_numeric($args['paged'])) {
             $args['paged'] = 1;
@@ -694,6 +705,7 @@ class PTB_Public {
                                         }
                                         if ($mtype === 'select' || $mtype === 'checkbox') {
                                             $value = explode(',', $value);
+											$value = array_map(function($val) { return '"'.$val.'"'; }, $value); // Similar to #7153
                                             $args['post__in'] = self::parse_multi_query($value, $type, $origk, $args['post__in']);
 
                                             if (!$args['post__in']) {
@@ -917,7 +929,7 @@ class PTB_Public {
             }
         }
         self::$shortcode = true;
-        if (isset($args['offset']) && !$args['offset']) {
+        if (empty($args['offset'])) {
             unset($args['offset']);
         }
         $style = $args['style'];
@@ -928,6 +940,11 @@ class PTB_Public {
             $saved_post = clone $post;
         }
 
+		// if 'return' parameter with value of 'query' is sent to the function,
+		//  it will return the raw $args for WP_Query.
+		if ( $return === 'query' ) {
+			return $args;
+		}
         // The Query
         $query = new WP_Query(apply_filters('themify_ptb_shortcode_query', $args));
         // The Loop
@@ -939,6 +956,9 @@ class PTB_Public {
             self::$options->get_post_type_data($type, $cmb_options, $post_support, $post_taxonomies);
 
             $terms = array();
+            if(!empty($args['masonry']) && $style!=='list-post'){
+                $style.= ' ptb_masonry';
+            }
             $html = '<div class="ptb_loops_wrapper ptb_loops_shortcode clearfix ptb_' . $style . '">';
             while ($query->have_posts()) {
                 $query->the_post();
@@ -960,11 +980,16 @@ class PTB_Public {
             }
             $html .= '</div>';
             if (isset($args['pagination']) && $query->max_num_pages > 1) {
+					$paginate_args = array(
+						'total' => $query->max_num_pages,
+						'current' => $args['paged']
+					);
+					if ( isset($ptb_widget) ) {
+						$paginate_args['base'] = @add_query_arg('ptb_paged','%#%');
+						$paginate_args['format'] = '';
+					}
                 $html.='<div class="ptb_pagenav">';
-                $html .= paginate_links(array(
-                    'total' => $query->max_num_pages,
-                    'current' => $args['paged']
-                ));
+                $html .= paginate_links($paginate_args);
                 $html.='</div>';
             }
             if (isset($args['post_filter']) && !isset($args['post_id']) && !empty($terms)) {

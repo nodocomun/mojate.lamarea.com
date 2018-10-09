@@ -1,4 +1,13 @@
 <?php
+/**
+ * Template to display Audio field types
+ *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field-audio.php
+ *
+ * @author Themify
+ * @package PTB Extra Fields
+ */
+
 $post_data = array();
 if (!empty($meta_data[$args['key']]['url'])) {
     $post_data = array_filter($meta_data[$args['key']]['url']);

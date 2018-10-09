@@ -2,7 +2,7 @@
 /**
  * The plugin options management class
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -266,7 +266,6 @@ class PTB_Options {
      *
      */
     public function set_custom_post_types_options($value) {
-
         $this->options[$this->options_key_custom_post_types] = $value;
     }
 
@@ -333,6 +332,7 @@ class PTB_Options {
     public function ptb_register_custom_post_types() {
 
         $cpt_objects_array = $this->get_custom_post_types();
+        add_action( 'rest_api_init', array($this,'register_rest_meta'),10,1);
         $is_admin = is_admin();
         if ($is_admin) {
             $admin = new PTB_Admin($this->plugin_name, $this->version, $this);
@@ -395,8 +395,80 @@ class PTB_Options {
         $this->set_flush();
     }
 
+    public function register_rest_meta($wp_rest_server){
+        $request = trim($GLOBALS['wp']->query_vars['rest_route'],'/').'/';
+        preg_match('#wp\/v2\/(.+?)\/#i',$request,$m);
+        if(isset($m) && !empty($m[1]) && $this->has_custom_post_type($m[1])){
 
+            register_rest_field( $m[1], 'ptb_metabox', array(
+                            'get_callback' => array($this,'get_rest_cmb'),
+                            'update_callback' => null,
+                            'schema'          => null
+                     )
+             );
+            register_rest_field( $m[1], 'ptb_taxonomy', array(
+                            'get_callback' => array($this,'get_rest_ctx'),
+                            'update_callback' => null,
+                            'schema'          => null
+                     )
+            );
+            register_rest_field( $m[1], 'ptb_featured_image', array(
+                            'get_callback' => array($this,'get_rest_image'),
+                            'update_callback' => null,
+                            'schema'          => null
+                     )
+            );
+         }
+	}
+        
+    public function get_rest_cmb( $object, $field_name, $request ) {
+        $return = array();
+        $cmb = $this->get_cpt_cmb_options($object['type']);
+        foreach ($cmb as $k => $c) {
+            $k = 'ptb_' . $k;
+            $v = get_post_meta($object['id'], $k, true);
+            if ($v !== '') {
+                if (is_array($v)) {
+                    foreach ($v as $k2 => $v2) {
+                        if ($v2 === '') {
+                            unset($v[$k2]);
+                        }
+                    }
+                    if (empty($v)) {
+                        continue;
+                    }
+                }
+
+                $return[$k] = $v;
+            }
+        }
+        return $return;
+    }
     
+    public function get_rest_ctx( $object, $field_name, $request ) {
+		$return = array();
+		$tax =$this->get_cpt_cmb_taxonomies($object['type']);
+		foreach($tax as $c){
+			$v =wp_get_post_terms($object['id'],$c);
+			if(!empty($v) && !is_wp_error($v)){
+				$return[$c] =$v;
+			}
+		}
+        return $return;
+    }
+    
+    public function get_rest_image($object, $field_name, $request){
+            $id = get_post_thumbnail_id();
+            if($id){
+                    $arr = get_post($id);
+                    return !empty($arr)?array(
+                            'url'=>$arr->guid,
+                            'title'=>$arr->post_title,
+                            'caption'=>$arr->post_excerpt
+                    ):null;
+            }
+            return null;
+    }
 
     /**
      * Edits (replace) custom post type in options
@@ -801,6 +873,7 @@ class PTB_Options {
                 $wpdb->query("UPDATE $wpdb->term_taxonomy SET taxonomy = '$new_id' WHERE taxonomy = '$id'");
                 $this->set_flush();
             }
+            do_action('ptb_ctx_update', $id, $new_id);
         }
     }
 
@@ -827,7 +900,7 @@ class PTB_Options {
             $this->remove_custom_taxonomy_from_custom_post_types($id);
 
             unset($this->option_custom_taxonomies[$id]);
-
+            do_action('ptb_ctx_remove', $id);
             return true;
         }
 
@@ -1266,15 +1339,36 @@ class PTB_Options {
             if (!current_user_can('edit_page', $post_id)) {
                 return $post_id;
             }
-        } else {
-
-            if (!current_user_can('edit_post', $post_id)) {
+        } else if (!current_user_can('edit_post', $post_id)) {
                 return $post_id;
-            }
         }
-
+        $this->update_post_type_meta($post);
         /* OK, its safe for us to save the data now. */
         do_action('ptb_cmb_update', $post, $this);
+    }
+    
+    /**
+     * Update post meta
+     *
+     * @since 1.0.0
+     *
+     * @param WP_Post $post
+     * @param PTB_Options $options_obj
+     */
+    public function update_post_type_meta($post) {
+        $cmb_options = $this->get_cpt_cmb_options($post->post_type);
+        $cmb_options = apply_filters('ptb_filter_cmb_body', $cmb_options, $post);
+        $name = PTB::get_plugin_name();
+        foreach ($cmb_options as $meta_key => $args) {
+            $wp_meta_key = sprintf('%s_%s', $name, $meta_key);
+            if (empty($_POST[$meta_key]) && $_POST[$meta_key]!='0') {
+                delete_post_meta($post->ID, $wp_meta_key);
+            }
+            else{
+                // Update the meta field in the database.
+                update_post_meta($post->ID, $wp_meta_key, $_POST[$meta_key]);
+            }
+        }
     }
 
     /**
@@ -1403,12 +1497,13 @@ class PTB_Options {
         $post_type_templates = array();
 
         foreach ($this->option_post_type_templates as $id => $options) {
-
-            $ptt = new PTB_Post_Type_Template($this->plugin_name, $this->version);
-            $ptt->set_id($id);
-            $ptt->deserialize($options);
-            if ($ptt->has_archive() || $ptt->has_single()) {
-                PTB_Utils::add_to_array($ptt, $post_type_templates);
+            if (!isset($post_type_templates[$id])) {
+                $ptt = new PTB_Post_Type_Template($this->plugin_name, $this->version);
+                $ptt->set_id($id);
+                $ptt->deserialize($options);
+                if($ptt->has_archive() || $ptt->has_single()){
+                    $post_type_templates[$id] = $ptt;
+                }
             }
         }
 

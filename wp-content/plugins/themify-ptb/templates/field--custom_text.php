@@ -2,6 +2,8 @@
 /**
  * Custom Text field template
  *
+ * To override this template copy it to <your_theme>/plugins/themify-ptb/templates/field--custom_text.php
+ *
  * @var string $type
  * @var array $args
  * @var array $data

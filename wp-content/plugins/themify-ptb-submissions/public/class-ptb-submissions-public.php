@@ -2,7 +2,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -56,7 +56,7 @@ class PTB_Submission_Public {
         add_action('init', array($this, 'register_session'));
         if (!is_admin()) {
             add_filter('the_title', array($this, 'page_title'), 10, 2);
-            add_filter('wp_title', array($this, 'wp_title'), 10, 2);
+            add_filter('pre_get_document_title', array($this, 'wp_title'), 10, 1); //wp_title is depirecated since WP version 4.4
             add_filter('author_link', array($this, 'author_url'), 10, 3);
             add_filter( 'widget_text', array($this,'get_ptb_submission_shortcode'),10,1);
             add_filter('script_loader_tag', array($this, 'ptb_ignore_rocket_loader'));
@@ -418,24 +418,27 @@ class PTB_Submission_Public {
                             <?php if (!empty($data[$args['key']])): ?>
                                 <?php foreach ($data[$args['key']] as $value): ?>
                                     <?php
-                                    $v[$args['key']] = array();
+                                    $v = array();
                                     foreach ($languages as $code => $lng) {
                                         if (isset($data[$args['key']][$code]) && !empty($data[$args['key']][$code])) {
-                                            $k = key($data[$args['key']][$code]);
-                                            $v[$args['key']][$code] = $data[$args['key']][$code][$k];
-                                            unset($data[$args['key']][$code][$k]);
+                                            foreach ($data[$args['key']][$code] as $k => $val) {
+                                                $v[][$args['key']][$code] = $data[$args['key']][$code][$k];
+                                                unset($data[$args['key']][$code][$k]);
+                                            }
+                                            $empty = false;
                                         }
                                     }
-                                    if (empty($v[$args['key']])) {
+                                    if ($empty) {
                                         continue;
                                     }
-                                    $empty = false;
+                                    foreach ($v as $k => $val ):
                                     ?>
-                                    <li class="ptb-submission-text-option">
-                                        <i title="<?php _e('Sort', 'ptb-submission') ?>" class="fa fa-sort ptb-submission-option-sort"></i>
-                                        <?php PTB_CMB_Base::module_language_tabs('submission', $v, $languages, $args['key'], 'text', false, true); ?>
-                                        <i title="<?php _e('Remove', 'ptb-submission') ?>" class="ptb-submission-remove fa fa-times-circle"></i>
-                                    </li>
+                                        <li class="ptb-submission-text-option">
+                                            <i title="<?php _e('Sort', 'ptb-submission') ?>" class="fa fa-sort ptb-submission-option-sort"></i>
+                                            <?php PTB_CMB_Base::module_language_tabs('submission', $val, $languages, $args['key'], 'text', false, true); ?>
+                                            <i title="<?php _e('Remove', 'ptb-submission') ?>" class="ptb-submission-remove fa fa-times-circle"></i>
+                                        </li>
+                                    <?php endforeach; ?>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                             <?php if ($empty): ?>
@@ -1133,13 +1136,16 @@ class PTB_Submission_Public {
                 }
                 $multilfields = array('title' => 'post_title', 'excerpt' => 'post_excerpt', 'editor' => 'post_content','post_tag'=>'post_tag');
                 $multilfields = apply_filters('ptb_submission_multifields_save', $multilfields, $post_data);
-                foreach ($multilfields as $k => $m) {
+				foreach ($multilfields as $k => $m) {
                     if (isset($result_data[$k]) && isset($result_data[$k][$lang])) {
                         $_post[$m] = $result_data[$k][$lang];
                     }
                 }
                 if ($post_id) {
                     $_post['ID'] = $post_id;
+					if ( isset($cmb_options['comments']) && comments_open($post_id) ) {
+						$_post['comment_status'] = 'open';
+					}
                 } else {
                     $_post['slug'] = sanitize_title($_post['post_title']);
                 }
@@ -1913,6 +1919,44 @@ class PTB_Submission_Public {
                     <td><label for="ptb_submission_confirm_password"><?php _e('Confirm Password', 'ptb-submission') ?>:</label></td>
                     <td><input type="password" id="ptb_submission_confirm_password" name="submission[cpassword]" value="" /></td>
                 </tr>
+                <tr>
+                    <td><label for="ptb_submission_first_name"><?php _e('First Name', 'ptb-submission') ?>:</label></td>
+                    <td><input type="text" id="ptb_submission_first_name" name="submission[user_firstname]" value="<?php echo $user->user_firstname ?>" /></td>
+                </tr>
+                <tr>
+                    <td><label for="ptb_submission_last_name"><?php _e('Last Name', 'ptb-submission') ?>:</label></td>
+                    <td><input type="text" id="ptb_submission_last_name" name="submission[last_name]" value="<?php echo $user->last_name ?>" /></td>
+                </tr>
+                <tr>
+                    <td><label for="ptb_submission_display_name_as"><?php _e('Display Name As', 'ptb-submission') ?>:</label></td>
+                    <td>
+						<select id="ptb_submission_display_name_as" name="submission[display_as]">
+							<?php $display_name = array( $user->user_login, $user->first_name, $user->last_name, $user->first_name .' '. $user->last_name, $user->last_name .' '. $user->first_name);
+
+								if ( !empty($user->display_name) && !in_array( $user->display_name, $display_name) ) {
+									echo "<option selected=\"selected\">". $user->display_name ."</option>";
+								}
+								$strpos = array_search($user->display_name , $display_name );
+								foreach ( $display_name as $key => $name ) {
+									if ($key === $strpos) {
+										echo "<option selected=\"selected\">". $name ."</option>";
+									} else {
+										echo "<option>". $name ."</option>";
+									}
+								}
+
+							?>
+						</select>
+					</td>
+                </tr>
+                <tr>
+                    <td><label for="ptb_submission_website"><?php _e('Website', 'ptb-submission') ?>:</label></td>
+                    <td><input type="text" id="ptb_submission_website" name="submission[website]" value="<?php echo $user->user_url ?>" /></td>
+                </tr>
+                <tr>
+                    <td><label for="ptb_submission_biography"><?php _e('Biographical Info', 'ptb-submission') ?>:</label></td>
+                    <td><textarea id="ptb_submission_biography" name="submission[biography]"><?php echo esc_textarea($user->description); ?></textarea></td>
+                </tr>
             </table>
             <input class="ptb-submission-submit-btn" type="submit" value="<?php _e('Edit', 'ptb-submission') ?>" />
             <div class="ptb-submission-success-text"></div>
@@ -1953,10 +1997,25 @@ class PTB_Submission_Public {
             } else {
                 $post_data['user_pass'] = false;
             }
+            $user_data = array();
+            if (!empty($post_data['user_firstname'])) {
+                $user_data['user_firstname'] = sanitize_text_field($post_data['user_firstname']);
+            }
+            if (!empty($post_data['last_name'])) {
+                $user_data['last_name'] = sanitize_text_field($post_data['last_name']);
+            }
+            if (!empty($post_data['display_as'])) {
+                $user_data['display_name'] = sanitize_text_field($post_data['display_as']);
+            }
+            if (!empty($post_data['website'])) {
+                $user_data['user_url'] = esc_url_raw($post_data['website'], array('http', 'https'));
+            }
+            if (!empty($post_data['biography'])) {
+                $user_data['description'] = sanitize_textarea_field($post_data['biography']);
+            }
             if (!empty($errors)) {
                 die(wp_json_encode($errors));
             }
-            $user_data = array();
             $user_data['ID'] = $user_id;
             $user_data['user_email'] = $post_data['user_email'];
             $user_data['user_login'] = $post_data['user_login'];
@@ -2051,8 +2110,7 @@ class PTB_Submission_Public {
     }
 
     public function author_content($content) {
-        remove_filter('the_content', array($this, 'author_content'));
-        $name = self::$ptb_author->first_name . ' ' . self::$ptb_author->last_name;
+        $name = !empty(self::$ptb_author->display_name) ? self::$ptb_author->display_name : self::$ptb_author->first_name . ' ' . self::$ptb_author->last_name;
         $ptb_options = PTB::get_option();
         $post_types = $ptb_options->get_custom_post_types();
         $author_posts = $submission_types = array();
@@ -2072,12 +2130,17 @@ class PTB_Submission_Public {
                         <?php echo self::$ptb_author->user_description; ?>
                     </div>
                 <?php endif; ?>
+				 <?php if (self::$ptb_author->user_url):?>
+                    <div class="ptb-author-website">
+                        <a href="<?php echo esc_url(self::$ptb_author->user_url) ?>" rel="nofollow" target="_blank"><?php echo self::$ptb_author->user_url; ?></a>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         <h2 class="ptb-author-posts-by"><?php _e('Posts by', 'ptb-submission'); ?> <?php echo self::$ptb_author->first_name; ?> <?php echo self::$ptb_author->last_name; ?>:</h2>
         <?php if (!empty($submission_types)): ?>
             <?php ?>
-            <?php echo do_shortcode('[ptb posts_per_page="2" pagination="1" style="grid3" author="' . self::$ptb_author->ID . '" type="' . implode(',', $submission_types) . '"]') ?>
+            <?php echo do_shortcode('[ptb pagination="1" style="grid3" author="' . self::$ptb_author->ID . '" type="' . implode(',', $submission_types) . '"]') ?>
         <?php endif; ?>
         <?php
         $content = ob_get_contents();

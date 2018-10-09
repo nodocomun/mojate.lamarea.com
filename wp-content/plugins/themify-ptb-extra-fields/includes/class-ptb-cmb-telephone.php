@@ -2,7 +2,7 @@
 /**
  * Custom meta box class of type Telephone
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.2.8
  *
  * @package    PTB

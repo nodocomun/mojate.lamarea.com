@@ -51,8 +51,8 @@ foreach ($settings['gallery_images'] as $image) :
         echo!empty($img) ? $link_before . $img . $link_after : '';
         ?>
         </dt>
-        <dd<?php if (($settings['gallery_image_title'] === 'library' && !empty($title) ) || ( $settings['gallery_exclude_caption'] !== 'yes' && !empty($caption) )) : ?> class="wp-caption-text gallery-caption"<?php endif; ?>>
-            <?php if ($settings['gallery_image_title'] === 'library' && !empty($title)) : ?>
+        <dd<?php if (($settings['gallery_image_title'] === 'yes' && !empty($title) ) || ( $settings['gallery_exclude_caption'] !== 'yes' && !empty($caption) )) : ?> class="wp-caption-text gallery-caption"<?php endif; ?>>
+            <?php if ($settings['gallery_image_title'] === 'yes' && !empty($title)) : ?>
                 <strong class="themify_image_title"><?php echo $title ?></strong>
             <?php endif; ?>
             <?php if ($settings['gallery_exclude_caption'] !== 'yes' && !empty($caption)) : ?>
@@ -68,7 +68,7 @@ foreach ($settings['gallery_images'] as $image) :
 <?php endforeach; // end loop  ?>
 <br style="clear: both" />
 <?php if ($pagination) : ?>
-    <div class="builder_gallery_nav" data->
+    <div class="pagenav clearfix">
         <?php
         /**
          * fix paginate_links url in modules loaded by Ajax request: the url does not match the actual page url.
@@ -83,7 +83,8 @@ foreach ($settings['gallery_images'] as $image) :
             'base' => $base . '%_%',
             'current' => $current,
             'total' => ceil($total / $settings['gallery_per_page']),
-            'format' => '?builder_gallery=%#%'
+            'format' => '?builder_gallery=%#%',
+			'prev_next' => false,
         ));
         ?>
     </div>

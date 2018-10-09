@@ -40,7 +40,20 @@
 			var $self = $( this ),
 			thisGroup = $self.data( 'accordion' ),
 			$li = $( '.' + thisGroup + '-group' );
-			$li.appendTo( $self );
+
+			if( $li.is( '#customize-control-customcss_ctrl' ) ) {
+				var scrollTop = $li.find( '.CodeMirror-scroll' ).scrollTop(),
+					cm = $li.find( '.CodeMirror' ).get(0);
+				$li.appendTo( $self );
+
+				if( 'undefined' !== typeof cm && 'CodeMirror' in cm ) {
+					cm.CodeMirror.focus();
+					cm.CodeMirror.scrollTo( 0, scrollTop );
+				}
+			} else {
+				$li.appendTo( $self );
+			}
+			
 			var reverse = $( $li.get().reverse() );
 			reverse.each( function() {
 				if( $(this).children( '.themify-control-title' ).length === 0 ) {
@@ -196,7 +209,9 @@
 					if ( _.isUndefined( control.value[control.id][control.getCurrentDevice()] ) ) 
 						control.value[control.id][control.getCurrentDevice()] = {};
 					
-					control.value[control.id][control.getCurrentDevice()] = _.omit( control.value[control.id][control.getCurrentDevice()], ['id', 'src'] );
+					//control.value[control.id][control.getCurrentDevice()] = _.omit( control.value[control.id][control.getCurrentDevice()], ['id', 'src'] );
+					control.value[control.id][control.getCurrentDevice()].id = '';
+					control.value[control.id][control.getCurrentDevice()].src = '';
 				} else {
 					control.value[control.id].id = '';
 					control.value[control.id].src = '';
@@ -472,15 +487,18 @@
 			var control = this, $field = $(control.field, control.container);
 
 			$obj.on('change', function () {
+				var value = control.value[control.id],
+					device = control.getCurrentDevice(),
+					currentVal = $( 'option:selected', $(this) ).val();
+
 				if ( control.isResponsiveStyling() ) {
-					if ( _.isUndefined( control.value[control.id][control.getCurrentDevice()] ) ) 
-						control.value[control.id][control.getCurrentDevice()] = {};
-					
-					control.value[control.id][control.getCurrentDevice()][key] = $('option:selected', $(this)).val();
+					_.isUndefined( value[device] ) && ( value[device] = {} );
+					value[device][key] = currentVal;
 				} else {
-					control.value[control.id][key] = $('option:selected', $(this)).val();
+					value[key] = currentVal;
 				}
-				$field.val(JSON.stringify(control.value[control.id])).trigger('change');
+
+				$field.val( JSON.stringify( value ) ).trigger( 'change' );
 			});
 		},
 		collapse: function ($obj) {
@@ -525,8 +543,18 @@
 			var control = this, $field = $(control.field, control.container);
 
 			$obj.on('keyup', function () {
-				control.value[control.id].width = $(this).val();
-				$field.val(JSON.stringify(control.value[control.id])).trigger('change');
+				var value = control.value[control.id],
+					device = control.getCurrentDevice(),
+					width = $(this).val();
+
+				if( control.isResponsiveStyling() ) {
+					_.isUndefined( value[device] ) && ( value[device] = {} );
+					value[device].width = width;
+				} else {
+					value.width = width;
+				}
+
+				$field.val( JSON.stringify( value ) ).trigger( 'change' );
 			});
 		},
 		dimensionSame: function ($obj) {
@@ -573,24 +601,29 @@
 				$field.val(JSON.stringify(control.value[control.id])).trigger('change');
 			});
 		},
-		auto: function ($obj) {
-			var control = this, $field = $(control.field, control.container),
-					hide = $obj.data('hide');
+		auto: function ( $obj ) {
+			var control = this, $field = $( control.field, control.container ),
+				hide = $obj.data( 'hide' ),
+				hideEl = $( control.container ).find( '.' + hide );
 
 			$obj.on('click', function () {
-				var $self = $(this);
-				if ($self.prop('checked')) {
-					control.value[control.id].auto = 'auto';
-					$(control.container).find('.' + hide).stop().addClass('hide-horizontally');
+				var $self = $(this),
+					value = control.value[control.id],
+					device = control.getCurrentDevice(),
+					currentVal = $self.prop( 'checked' ) ? 'auto' : '';
+
+				if( control.isResponsiveStyling() ) {
+					_.isUndefined( value[device] ) && ( value[device] = {} );
+					value[device].auto = currentVal;
 				} else {
-					control.value[control.id].auto = '';
-					$(control.container).find('.' + hide).stop().removeClass('hide-horizontally');
+					value.auto = currentVal;
 				}
-				$field.val(JSON.stringify(control.value[control.id])).trigger('change');
+
+				hideEl.stop().toggleClass( 'hide-horizontally', currentVal );
+				$field.val( JSON.stringify( value ) ).trigger( 'change' );
 			});
-			if ($obj.prop('checked')) {
-				$(control.container).find('.' + hide).addClass('hide-horizontally');
-			}
+
+			$obj.prop( 'checked' ) && hideEl.addClass( 'hide-horizontally' );
 		},
 		autoSame: function ($obj) {
 			var control = this, $field = $(control.field, control.container),
@@ -1236,7 +1269,6 @@
 			$obj.nextAll( '[class*="-mode-wrap"]' ).hide();
 			$obj.nextAll( '[class*="-' + initVal + '-mode"]' ).show();
 		}
-
 	});
 	/***************************************************************************
 	 * ThemifyControl End
@@ -1798,44 +1830,78 @@
 	api.ThemifyCustomCSS = api.ThemifyControl.extend({
 		field: '.themify_customcss_control',
 		expand: function (container, $customCSS) {
-			var $blockToHide = $customCSS.closest('.themify-customizer-brick');
+			var $blockToHide = $customCSS.closest('.themify-customizer-brick'),
+				control = this;
 
 			// Expand panel hides custom css in accordion, adds markup and attaches needed events
 			$('.themify-expand', container).on('click', function (e) {
 				e.preventDefault();
 				var $expand = $('<div class="customize-control customcss-expand"><a class="themify-contract ti ti-close"></a><textarea class="customcss">' + $customCSS.val() + '</textarea></div>').hide();
 				$blockToHide.stop().slideUp();
-				$expand.prependTo($('#widgets-right')).slideDown();
-				$expand.find('.customcss').on('keyup paste', function (e) {
-					if ('paste' === e.type) {
-						setTimeout(function () {
-							$customCSS.val($(this).val()).trigger('keyup');
-						}, 1);
-					} else {
-						$customCSS.val($(this).val()).trigger('keyup');
-					}
-				});
+				$expand.prependTo( $('#widgets-right') ).slideDown( 400, function() {
+					control.initSyntaxHighlightingEditor( $expand );
+				} );
 
 				// Contract panel removes markup and events and reveals custom css in accordion
 				$expand.find('.themify-contract').on('click', function (e) {
 					e.preventDefault();
 					$(this).off('click').closest('.customize-control').remove();
-					$expand.find('.customcss').off('keyup paste');
 					$blockToHide.stop().slideDown();
 				});
 			});
 		},
 		ready: function () {
 			var control = this,
-					$field = $(control.field, control.container),
-					$customCSS = $('.customcss', control.container);
+				$field = $( control.field, control.container ),
+				$customCSS = $( '.customcss', control.container );
 
-			control.value[control.id] = $field.data('value') ? window.atob($field.data('value')) : '';
-			$field.data('value', '');
-			$field.val(control.value[control.id]);
+			control.value[control.id] = $field.data('value') ? window.atob( $field.data( 'value' ) ) : '';
+			$field.data( 'value', '' );
+			$field.val( control.value[control.id] );
+			
+			control.initSyntaxHighlightingEditor();
+			
+			// Prevent scroll to top
+			var currentVal = typeof control.editor !== 'undefined'
+				? control.editor.codemirror.getValue()
+				: control.container.find('textarea').val();
+
 			// Initialize expand/contract action
-			control.expand(control.container, $customCSS);
-		}
+			control.expand( control.container, $customCSS );
+		},
+		initSyntaxHighlightingEditor: function( context ) {
+			if ( typeof wp.codeEditor === 'undefined' ) return;
+
+			var control = this, $textarea, settings, suspendEditorUpdate = false;
+
+			$textarea = context ? context.find( 'textarea' ) : control.container.find( 'textarea' );
+			settings = wp.codeEditor.defaultSettings ? _.clone( wp.codeEditor.defaultSettings ) : {};
+			settings.codemirror = _.extend( {}, settings.codemirror, { indentUnit: 2, tabSize: 2, mode: 'css' } );
+			control.editor = wp.codeEditor.initialize( $textarea, settings );
+
+			// Improve the editor accessibility.
+			$( control.editor.codemirror.display.lineDiv )
+				.attr({
+					role: 'textbox',
+					'aria-multiline': 'true',
+					'aria-label': control.params.label,
+					'aria-describedby': 'editor-keyboard-trap-help-1 editor-keyboard-trap-help-2 editor-keyboard-trap-help-3 editor-keyboard-trap-help-4'
+				});
+
+			/*
+			 * When the CodeMirror instance changes, mirror to the textarea,
+			 * where we have our "true" change event handler bound.
+			 */
+			control.editor.codemirror.on( 'change', function( codemirror ) {
+				suspendEditorUpdate = true;
+				control.container.find( 'textarea' ).val( codemirror.getValue() ).trigger( 'change' );
+				suspendEditorUpdate = false;
+			});
+
+			control.editor.codemirror.on( 'keydown', function onKeydown( codemirror, event ) {
+				27 == event.keyCode && event.stopPropagation();
+			});
+		},
 	});
 	api.controlConstructor.themify_customcss = api.ThemifyCustomCSS;
 	////////////////////////////////////////////////////////////////////////////

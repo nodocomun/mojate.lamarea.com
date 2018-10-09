@@ -2,7 +2,7 @@
 /**
  * The public-facing functionality of the plugin.
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
@@ -72,6 +72,12 @@ class PTB_Submission_Admin {
         add_filter('ptb_template_modules', array($this, 'ptb_submission_modules'), 10, 3);
         add_filter('ptb_template_save', array($this, 'ptb_template_save'), 10, 2);
         add_filter('ptb_screens', array($this, 'screens'), 10, 2);
+		
+		if ( !get_option('ptb_submission_updated_authors', false) ) {
+			add_action('wp_ajax_ptb_submission_update_authors', array($this, 'update_authors'));
+			add_action('admin_notices', array($this, 'update_authors_notice'));
+			add_action('admin_footer', array($this, 'update_authors_notice_script'));
+		}
     }
 
     /**
@@ -615,6 +621,56 @@ class PTB_Submission_Admin {
             }
         }
     }
+
+	public function update_authors () {
+		check_ajax_referer('ptb_submission_author_nonce');
+		$users = get_users( array( 'role' => 'ptb' ) );
+		
+		$optino = get_option('ptb_submission_updated_authors', '');
+		
+		if ( get_role('ptb') && $optino === '' ) {
+			remove_role( 'ptb' );
+			$capabilities = array('read' => true, 'level_1' => true);
+			$capabilities = apply_filters('ptb_submission_role', $capabilities);
+			add_role('ptb', __('PTB Author', 'ptb-submission'), $capabilities);
+		}
+		
+		foreach ($users as $user) {
+			$user->add_role('ptb'); // this will update old capabilities with new capabilities of role. Like user_level etc...
+		}
+
+		update_option('ptb_submission_updated_authors', true);
+	}
+	
+	public function update_authors_notice () {
+	?>
+		<div class="notifications">
+			<p class="update update-nag">
+				<?php _e('To support new author features of PTB submission an updation is needed to PTB Authors. Click on ', 'ptb-submission'); ?> <button class="button" id='ptb_submission_author_notice'>Run Wizerd</button> <?php _e(' to apply the update. It will take only few moments.', 'ptb-submission')?>
+			</p>
+		</div>
+	<?php
+	}
+	
+	public function update_authors_notice_script () {
+	?>
+		<script>
+			jQuery('#ptb_submission_author_notice').one( "click", function() {
+				$elm = jQuery(this).parent();
+				jQuery.ajax({
+					url: '<?php echo admin_url('admin-ajax.php'); ?>',
+					type: 'POST',
+					data: {'action': 'ptb_submission_update_authors',
+							'_ajax_nonce': '<?php echo wp_create_nonce( 'ptb_submission_author_nonce' ); ?>'
+							},
+					beforeSend: function () {
+						$elm.html('Wizerd is running in the back.');
+					}
+				});
+			});
+		</script>
+	<?php
+	}
 
     public function users_lists() {
         if (current_user_can('delete_users')) {

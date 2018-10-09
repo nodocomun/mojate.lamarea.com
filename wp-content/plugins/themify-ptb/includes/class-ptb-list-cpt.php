@@ -8,7 +8,7 @@ if (!class_exists('WP_List_Table')) {
 /**
  * The List table class which extends WP_List_Table Wordpress Admin core class
  *
- * @link       http://themify.me
+ * @link       https://themify.me
  * @since      1.0.0
  *
  * @package    PTB
